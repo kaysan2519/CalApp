@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authRouter } from './modules/auth/authRoutes.js';
 import { profileRouter } from './modules/profile/profileRoutes.js';
+import { nutritionRouter } from './modules/nutrition/nutritionRoutes.js';
 
 export const app = express();
 
@@ -28,6 +29,7 @@ app.get('/api/v1/health', (req, res) => {
 // Routes
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/profile', profileRouter);
+app.use('/api/v1/nutrition', nutritionRouter);
 
 // Global error handler
 app.use(errorHandler);
