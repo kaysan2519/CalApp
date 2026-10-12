@@ -173,6 +173,16 @@ This log records default decisions, options evaluated, chosen paths, reasons, an
 - **Reason:** Promotes long-term mental well-being and positive relationship with food/fitness; prevents runtime crashes on diverse devices.
 - **Impact if changed:** Crucial for user retention and ethical fitness app compliance.
 
+---
+
+## 20. Deterministic Weekly Habit Insights & Safe Absence vs Zero Distinction
+- **Context:** Aggregating 7-day progress metrics (average calories, protein adherence, gym volume load) and generating habit insight narratives.
+- **Options:** Pure LLM generation on every request vs deterministic relational math with structured rule-based narrative synthesis.
+- **Decision:** All metrics (average calories, delta percentage, protein adherence %, and volume load) are computed via strict SQL aggregation over `meal_logs`, `meal_log_items`, and `workout_sessions`. The system **strictly distinguishes between "no data logged" (`daysLogged = 0`, `hasData = false`) and "zero values logged"**. Narratives are generated via verifiable mathematical thresholds, ensuring recommendations are 100% truthful, safe, and reproducible.
+- **Reason:** Adheres to Section 3 rule ("Numbers calculated in code, not LLM"). Eliminates hallucinated calorie reports, guarantees instant latency, and provides transparent coaching feedback.
+- **Impact if changed:** Fundamental data integrity principle for user trust and safety.
+
+
 
 
 

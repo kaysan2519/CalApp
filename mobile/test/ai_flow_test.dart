@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cal/core/network/api_client.dart';
 import 'package:cal/core/storage/token_storage.dart';
 import 'package:cal/features/nutrition/domain/ai_food_models.dart';

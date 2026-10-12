@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../nutrition/presentation/daily_menu_modal.dart';
 import '../../nutrition/presentation/nutrition_state_notifier.dart';
 import '../../nutrition/presentation/recipes_screen.dart';
+import 'weekly_insight_card.dart';
 
 class TodayScreen extends ConsumerStatefulWidget {
   const TodayScreen({super.key});
@@ -377,6 +378,8 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
+            const WeeklyInsightCard(),
           ],
         ),
       ),

@@ -13,6 +13,7 @@ import { bodyRouter } from './modules/workouts/bodyRoutes.js';
 import gamificationRouter from './modules/gamification/gamificationRoutes.js';
 import communityRouter from './modules/community/communityRoutes.js';
 import notificationRouter from './modules/notifications/notificationRoutes.js';
+import insightRouter from './modules/insights/insightRoutes.js';
 
 export const app = express();
 
@@ -46,6 +47,7 @@ app.use('/api/v1/body', bodyRouter);
 app.use('/api/v1/gamification', gamificationRouter);
 app.use('/api/v1/community', communityRouter);
 app.use('/api/v1/notifications', notificationRouter);
+app.use('/api/v1/insights', insightRouter);
 
 // Global error handler
 app.use(errorHandler);

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../data/ai_repository.dart';
 import '../domain/ai_food_models.dart';
-import '../domain/nutrition_models.dart';
 import 'nutrition_state_notifier.dart';
 
 class TextFoodEntryDialog extends ConsumerStatefulWidget {
