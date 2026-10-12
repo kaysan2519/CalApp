@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: cal_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: cal_dev
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cal_backend
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: password
+      DB_NAME: cal_dev
+      JWT_SECRET: cal_dev_docker_secret_key_12345
+      JWT_REFRESH_SECRET: cal_dev_docker_refresh_key_12345
+    depends_on:
+      - postgres
+
+volumes:
+  pgdata:

@@ -2,8 +2,8 @@
 
 **Mode Eksekusi:** OTONOM  
 **Tanggal Terakhir Diperbarui:** 2026-10-12  
-**Fase Saat Ini:** Fase 1 (Selesai) → Memulai Fase 2 (Fondasi & Desain)  
-**Branch Git:** `main` (akan beralih ke `feat/cal-build` di awal Fase 2)
+**Fase Saat Ini:** Fase 2 (Selesai) → Memulai Fase 3 (Autentikasi & Persistensi)  
+**Branch Git:** `feat/cal-build`
 
 ---
 
@@ -11,7 +11,7 @@
 
 | ID | Fitur | Status | Bukti / Pengujian | Catatan & Keterbatasan |
 |:---|:---|:---:|:---|:---|
-| **F00** | Fondasi & Arsitektur | BELUM | Belum diuji | Tema Flutter, GoRouter, Riverpod, token secure storage, API client, offline queue |
+| **F00** | Fondasi & Arsitektur | TERVERIFIKASI | `flutter test` (4 tests passed), `vitest` (2 tests passed), `flutter analyze` clean | Tema Flutter Emerald/Orange/Indigo, CalMacroColors ThemeExtension, GoRouter 4 tabs, TokenStorage, ApiClient Dio, OfflineQueue UUIDv4 |
 | **F01** | Akun, Profil & Target Nutrisi | BELUM | Belum diuji | Register, login, logout, age gate 18+, Mifflin-St Jeor, target makro |
 | **F02** | Foto Makanan (AI Vision) | BELUM | Belum diuji | Vision model + JSON schema, crop/kompres, review & edit sebelum simpan |
 | **F03** | Barcode Scanner (Open Food Facts) | BELUM | Belum diuji | Scanner kamera, query OFF API cache, fallback manual entry |
@@ -40,8 +40,8 @@
 ## 2. Fase Eksekusi & Status
 
 1. [x] **Fase 1: Audit Sistem & Lingkungan** (Selesai)
-2. [ ] **Fase 2: Fondasi & Desain** (F00, Design System, Backend Scaffold, DB Schema, Docker/Local Postgres)
-3. [ ] **Fase 3: Autentikasi & Persistensi** (F01, F22 partial)
+2. [x] **Fase 2: Fondasi & Desain** (F00 Selesai & Terverifikasi)
+3. [ ] **Fase 3: Autentikasi & Persistensi** (F01, F22 bagian akun/ekspor/penghapusan)
 4. [ ] **Fase 4: Inti Nutrisi** (F05, F06, F07, F03, F20 air, Food DB & Unit Conversion)
 5. [ ] **Fase 5: AI Makanan & Coach** (F02, F04, F08)
 6. [ ] **Fase 6: Resep & Rencana** (F09, F10, F11)
@@ -52,9 +52,8 @@
 ---
 
 ## 3. Langkah Berikutnya
-- Pindah ke branch `feat/cal-build`.
-- Jalankan research UI/UX Pro Max untuk design system aplikasi mobile fitness nutrition tracker.
-- Tulis `docs/DECISIONS.md`, `CLAUDE.md`, `AGENTS.md`, `docs/DESIGN.md`, dan ERD backend.
-- Setup backend Express TypeScript + PostgreSQL schema migration.
-- Setup Flutter app scaffold dengan Riverpod, GoRouter, ColorScheme/Theme, localization.
-- Jalankan pemeriksaan lint & tes fondasi F00.
+- Melanjutkan ke Fase 3: Autentikasi & Persistensi.
+- Implementasi endpoint auth (register, login, refresh rotation, logout, export, hard delete).
+- Implementasi kalkulator Mifflin-St Jeor di backend dan sinkronisasi target nutrisi.
+- Implementasi auth repository & state Riverpod di Flutter, layar login/register dengan validasi age gate 18+.
+- Uji integrasi auth backend dan widget/flow test Flutter.

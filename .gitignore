@@ -1,0 +1,27 @@
+# Environment & Secrets
+.env
+.env.local
+*.env
+!.env.example
+
+# Node / Backend
+backend/node_modules/
+backend/dist/
+backend/uploads/
+coverage/
+
+# Flutter & Dart
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/build/
+mobile/.pub-cache/
+mobile/.pub/
+
+# System / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log
