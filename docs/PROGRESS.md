@@ -2,7 +2,7 @@
 
 **Mode Eksekusi:** OTONOM  
 **Tanggal Terakhir Diperbarui:** 2026-10-12  
-**Fase Saat Ini:** Fase 5 (Selesai) → Memulai Fase 6 (Resep & Rencana: F09, F10, F11)  
+**Fase Saat Ini:** Fase 7 (Selesai & Terverifikasi) → Memulai Fase 8 (Gamifikasi, Komunitas & Notifikasi: F16, F17, F18, F20, F21)  
 **Branch Git:** `feat/cal-build`
 
 ---
@@ -23,17 +23,17 @@
 | **F09** | Resep Sehat Indonesia | TERVERIFIKASI | `vitest tests/recipesAndPlanner.test.ts`, `flutter test test/recipe_planner_flow_test.dart` | 20 resep lokal Indonesia di PostgreSQL, scaling porsi matematis, filter tags, konversi langsung ke meal log |
 | **F10** | Menu Harian AI | TERVERIFIKASI | `vitest tests/recipesAndPlanner.test.ts`, `flutter test test/recipe_planner_flow_test.dart` | Generator menu 1-hari seimbang berbasis resep DB dalam batas toleransi kalori (±10%), opsi alternatif per meal slot |
 | **F11** | Rencana Harian Terpadu | TERVERIFIKASI | `vitest tests/recipesAndPlanner.test.ts`, `flutter test test/recipe_planner_flow_test.dart` | Dashboard terpadu hari ini menyatukan target nutrisi, hidrasi (+250ml), jadwal gym aktif, menu rekomendasi, dan checklist harian |
-| **F12** | Progres Tubuh & Ukuran | BELUM | Belum diuji | Berat, lingkar pinggang, foto privat (opsional, visual check pose) |
-| **F13** | Pelacak Gym & Sesi Latihan | BELUM | Belum diuji | 80 library latihan, set/rep/beban, rest timer, PR auto-detect |
-| **F14** | Program & Rutinitas Latihan | BELUM | Belum diuji | Rutinitas multi-hari, start session dari routine, volume tracker |
-| **F15** | AI Workout Generator | BELUM | Belum diuji | Generator program latihan berdasarkan tujuan/alat & text parser |
-| **F16** | XP, Level & Achievements | BELUM | Belum diuji | Event idempoten, audit log, limit XP harian, reward kebiasaan |
-| **F17** | Tantangan & Peringkat (Leaderboard) | BELUM | Belum diuji | Daily/weekly challenge, streak, XP leaderboard, anti-cheat |
-| **F18** | Komunitas & Grup | BELUM | Belum diuji | Grup publik/privat, feed, reaction, report/block/moderasi |
-| **F19** | Insight Harian & Mingguan | BELUM | Belum diuji | Query deterministik aktual (bedakan tanpa data vs nol), narasi AI |
+| **F12** | Progres Tubuh & Ukuran | TERVERIFIKASI | `vitest tests/workoutsAndProgress.test.ts` (12 passed), `flutter test test/workout_flow_test.dart` | Berat badan, lingkar pinggang/dada/pinggul, update bobot user di DB, perhitungan delta kg, ringkasan riwayat |
+| **F13** | Pelacak Gym & Sesi Latihan | TERVERIFIKASI | `vitest tests/workoutsAndProgress.test.ts`, `flutter test test/workout_flow_test.dart` | 81 katalog latihan gym, sesi latihan aktif, set/reps/weight logging, rest timer 90s, akumulasi total beban volume kg |
+| **F14** | Program & Rutinitas Latihan | TERVERIFIKASI | `vitest tests/workoutsAndProgress.test.ts`, `flutter test test/workout_flow_test.dart` | Rutinitas kustom & template, mulai sesi langsung dari rutinitas, deteksi otomatis Rekor Pribadi (PR) dengan rumus Brzycki 1RM |
+| **F15** | AI Workout Generator | TERVERIFIKASI | `vitest tests/workoutsAndProgress.test.ts`, `flutter test test/workout_flow_test.dart` | Generator rutinitas terstruktur otomatis berdasarkan goal, hari per minggu, dan alat, otomatis tersimpan ke DB rutinitas |
+| **F16** | XP, Level & Achievements | BELUM | Belum diuji | Event idempoten, audit log, limit XP harian (cap 500 XP), reward kebiasaan sehat |
+| **F17** | Tantangan & Peringkat (Leaderboard) | BELUM | Belum diuji | Daily/weekly challenge, streak, XP leaderboard dengan tie-break Asia/Jakarta |
+| **F18** | Komunitas & Grup | BELUM | Belum diuji | Grup publik/privat, post, reaction, report & moderasi konten |
+| **F19** | Insight Harian & Mingguan | BELUM | Belum diuji | Query deterministik aktual (bedakan tanpa data vs nol), ringkasan progres mingguan |
 | **F20** | Air, Langkah & Aktivitas | SEBAGIAN | `vitest tests/nutrition.test.ts`, `flutter test test/nutrition_flow_test.dart` | Pencatatan air manual (+250ml, +500ml) TERVERIFIKASI; sensor langkah/aktivitas diuji di Fase 8 |
-| **F21** | Notifikasi & Pengingat | BELUM | Belum diuji | Local notifications non-shaming, push abstraction |
-| **F22** | Pengaturan, Ekspor & Hapus Akun | SEBAGIAN | `vitest tests/authAndProfile.test.ts` (export & hard delete passed) | Ekspor JSON akun lengkap & hard delete akun backend cascade (UU PDP) terverifikasi; pengaturan privasi & notifikasi akan diselesaikan di Fase 8 |
+| **F21** | Notifikasi & Pengingat | BELUM | Belum diuji | Local notifications non-shaming, pengingat makan & hidrasi |
+| **F22** | Pengaturan, Ekspor & Hapus Akun | SEBAGIAN | `vitest tests/authAndProfile.test.ts` (export & hard delete passed) | Ekspor JSON akun lengkap & hard delete akun backend cascade (UU PDP) terverifikasi; integrasi UI di Fase 8/9 |
 
 ---
 
@@ -45,24 +45,27 @@
 4. [x] **Fase 4: Inti Nutrisi** (F05, F06, F07 Selesai & Terverifikasi, F03 PERLU-UJI-LIVE, F20 sebagian)
 5. [x] **Fase 5: AI Makanan & Coach** (F02, F04, F08 Selesai & Terverifikasi)
 6. [x] **Fase 6: Resep & Rencana** (F09, F10, F11 Selesai & Terverifikasi)
-7. [ ] **Fase 7: Gym & Progres** (F13, F14, F15, F12)
-8. [ ] **Fase 8: XP, Peringkat, Komunitas & Notifikasi** (F16, F17, F18, F21, F20 sensor)
-9. [ ] **Fase 9: Insight, Integrasi Akhir & Verifikasi** (F19, Full Regression, Clean ZIP)
+7. [x] **Fase 7: Gym & Progres** (F12, F13, F14, F15 Selesai & Terverifikasi)
+8. [ ] **Fase 8: XP, Peringkat, Komunitas & Notifikasi** (F16, F17, F18, F20, F21)
+9. [ ] **Fase 9: Insight, Integrasi Akhir & Verifikasi** (F19, Full Regression Suite, Clean ZIP)
 
 ---
 
-## 3. Langkah Berikutnya (Fase 7: Gym & Progres)
-- Implementasi F13 (Pelacak Gym & Sesi Latihan):
-  - Katalog 81 latihan gym terverifikasi dengan target otot, kategori, alat, dan instruksi.
-  - Sesi latihan aktif (live workout session): pencatatan set, repetisi, beban kg, RPE, deteksi otomatis Rekor Pribadi (PR) dengan rumus Brzycki 1RM.
-  - Rest timer antar set dan kalkulasi total volume beban (kg) deterministik.
-- Implementasi F14 (Program & Rutinitas Latihan):
-  - Pembuatan rutinitas latihan multi-hari (Push/Pull/Legs, Upper/Lower, Full Body).
-  - Mulai sesi workout langsung dari template rutinitas.
-- Implementasi F15 (AI Workout Generator):
-  - Generator program latihan berdasarkan tujuan (hipertrofi, kekuatan, daya tahan), frekuensi hari/minggu, dan ketersediaan alat (gym komersial, dumbbell rumah, bodyweight).
-- Implementasi F12 (Progres Tubuh & Ukuran):
-  - Catatan berat badan harian, lingkar pinggang, dada, pinggul, dan foto progres privat (opsional).
-  - Grafik tren berat badan dan perbandingan ukuran.
-- Automated tests backend (vitest) dan Flutter widget tests.
+## 3. Hasil Pengujian Terakhir (Fase 7)
+- **Backend Vitest:** 54 passed (7 test files, 100% pass)
+  - `tests/workoutsAndProgress.test.ts`: 12 tests passed
+- **Flutter Widget Tests:** 20 passed (7 test files, 100% pass)
+  - `test/workout_flow_test.dart`: 5 tests passed (WorkoutsScreen tabs, ActiveWorkoutSessionSheet, AiWorkoutGeneratorModal, BodyMeasurementModal)
 
+---
+
+## 4. Langkah Berikutnya (Fase 8: XP, Peringkat, Komunitas & Notifikasi)
+- **F16: XP, Level & Achievements**
+  - Database table: `xp_audit_logs`, `user_levels`, `achievements`, `user_achievements`.
+  - Idempotency key per aksi: log meal (+10 XP), log workout (+25 XP), cap 500 XP per hari per user.
+- **F17: Tantangan & Peringkat (Leaderboard)**
+  - Leaderboard mingguan teragregasi dengan timezone kanonik Asia/Jakarta, tie-break adil (waktu capaian XP lebih awal).
+- **F18: Komunitas & Grup**
+  - CRUD grup publik/privat, forum postingan berbagi meal & workout log, reaksi semangat (kudos), moderasi & pelaporan konten.
+- **F20 & F21: Notifikasi Lokal & Abstraksi Sensor Health**
+  - Layanan notifikasi lokal ramah & edukatif (pengingat air, evaluasi hari ini), fallback sehat jika sensor tidak aktif.

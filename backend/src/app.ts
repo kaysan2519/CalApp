@@ -8,6 +8,8 @@ import { nutritionRouter } from './modules/nutrition/nutritionRoutes.js';
 import { aiRouter } from './modules/ai/aiRoutes.js';
 import { recipeRouter } from './modules/recipes/recipeRoutes.js';
 import { plannerRouter } from './modules/recipes/plannerRoutes.js';
+import { workoutRouter } from './modules/workouts/workoutRoutes.js';
+import { bodyRouter } from './modules/workouts/bodyRoutes.js';
 
 export const app = express();
 
@@ -36,6 +38,8 @@ app.use('/api/v1/nutrition', nutritionRouter);
 app.use('/api/v1/ai', aiRouter);
 app.use('/api/v1/recipes', recipeRouter);
 app.use('/api/v1/planner', plannerRouter);
+app.use('/api/v1/workouts', workoutRouter);
+app.use('/api/v1/body', bodyRouter);
 
 // Global error handler
 app.use(errorHandler);

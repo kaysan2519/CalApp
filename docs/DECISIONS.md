@@ -119,4 +119,32 @@ This log records default decisions, options evaluated, chosen paths, reasons, an
 - **Reason:** Real-world recipes alone often fall short of full daily TDEE without appropriate portion sizing; guarantees balanced, attainable nutrition without extreme deficits.
 - **Impact if changed:** Ensures plans adhere to safety floors (1200/1500 kcal).
 
+---
+
+## 14. Gym Tracking, Brzycki 1RM Formula & Automatic PR Detection
+- **Context:** Gym session tracking requires calculating 1 Rep Max (1RM) and personal records (PRs) accurately across various repetition counts.
+- **Options:** Epley formula vs Brzycki formula vs Lander formula.
+- **Decision:** **Brzycki formula** `1RM = weight / (1.0278 - 0.0278 * reps)`, rounded to 1 decimal place. Whenever a logged set achieves higher weight or higher estimated 1RM than prior records for that specific exercise, the system flags `is_personal_record: true` and updates `personal_records` table immediately.
+- **Reason:** Brzycki is the gold standard for reps between 1 and 12, preventing wild overestimations at moderate rep ranges; automatic PR triggers delightful feedback (confetti/badge) without manual tallying.
+- **Impact if changed:** Affects PR notifications and strength progression analytics.
+
+---
+
+## 15. AI Workout Routine Generation & Database Persistence
+- **Context:** User requests AI-driven workout plan tailored to target goal (hypertrophy, strength, endurance), training frequency (2-5 days/week), and available equipment.
+- **Options:** Ephemeral chat advice vs structured routine creation stored directly in user's routine catalog.
+- **Decision:** AI routine generator formats output strictly into validated schema matching `workout_routines` and `routine_exercises`, automatically persisting the routine to PostgreSQL so the user can immediately start live sessions from it.
+- **Reason:** Bridging advice into immediate action eliminates manual re-typing and fits cleanly into the unified mobile tracker.
+- **Impact if changed:** User would have to manually recreate suggested exercises set-by-set.
+
+---
+
+## 16. Body Progress Tracking, Weight Delta & Profile Synchronization
+- **Context:** Logging body weight and circumference measurements (waist, chest, hips).
+- **Options:** Keep measurements isolated from user profile vs synchronize `users.weight_kg` with latest entry.
+- **Decision:** Whenever a new measurement is logged, `users.weight_kg` is updated to keep Mifflin-St Jeor TDEE calculations fresh. `weight_delta` is computed deterministically comparing the latest entry against the baseline (earliest) record.
+- **Reason:** Prevents calorie targets from becoming stale as the user progresses in their fitness journey; ensures holistic consistency between gym and nutrition modules.
+- **Impact if changed:** TDEE calculations would drift from actual body weight.
+
+
 
