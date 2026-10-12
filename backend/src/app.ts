@@ -6,6 +6,8 @@ import { authRouter } from './modules/auth/authRoutes.js';
 import { profileRouter } from './modules/profile/profileRoutes.js';
 import { nutritionRouter } from './modules/nutrition/nutritionRoutes.js';
 import { aiRouter } from './modules/ai/aiRoutes.js';
+import { recipeRouter } from './modules/recipes/recipeRoutes.js';
+import { plannerRouter } from './modules/recipes/plannerRoutes.js';
 
 export const app = express();
 
@@ -32,6 +34,8 @@ app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/profile', profileRouter);
 app.use('/api/v1/nutrition', nutritionRouter);
 app.use('/api/v1/ai', aiRouter);
+app.use('/api/v1/recipes', recipeRouter);
+app.use('/api/v1/planner', plannerRouter);
 
 // Global error handler
 app.use(errorHandler);

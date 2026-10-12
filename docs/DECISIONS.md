@@ -101,3 +101,22 @@ This log records default decisions, options evaluated, chosen paths, reasons, an
 - **Reason:** Ethical AI principles and user safety; prevents unhealthy dietary behaviors.
 - **Impact if changed:** Mitigates liability and provides superior UX trust.
 
+---
+
+## 12. Proportional Recipe Scaling & Direct Meal Logging
+- **Context:** Indonesian healthy recipes have fixed base servings (e.g. 2 servings), but users consume varying portion sizes (0.5x, 1.5x, 2x).
+- **Options:** Client-only math vs unified backend API endpoint calculating proportional macros and scaled ingredient gram quantities.
+- **Decision:** Scaled dynamically via `/recipes/:id?servings=N` and `/recipes/:id/log-to-meal`; macros and gram weights scaled precisely using ratio `servings / baseServings`; logging automatically writes snapshot record to `meal_items` and updates user's daily totals.
+- **Reason:** Ensures data integrity, offline sync compatibility, and seamless UX between recipe discovery and daily food tracking.
+- **Impact if changed:** Consistency across mobile and backend logs.
+
+---
+
+## 13. AI Meal Plan Generation with Safe Caloric Tolerance Bounds
+- **Context:** Automated daily meal planner selecting from database recipes.
+- **Options:** Random recipe picker vs intelligent macro allocation (25% breakfast, 40% lunch, 35% dinner) with portion multipliers.
+- **Decision:** Intelligent constraint satisfaction: algorithm selects closest candidate recipes for each meal slot and computes portion multipliers (0.5 increments) to keep total planned calories strictly within ±15% of user's personal caloric target.
+- **Reason:** Real-world recipes alone often fall short of full daily TDEE without appropriate portion sizing; guarantees balanced, attainable nutrition without extreme deficits.
+- **Impact if changed:** Ensures plans adhere to safety floors (1200/1500 kcal).
+
+
