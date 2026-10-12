@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -31,7 +32,7 @@ class TodayScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.person_outline_rounded),
             tooltip: 'Profil',
-            onPressed: () {},
+            onPressed: () => context.push('/profile'),
           ),
         ],
       ),

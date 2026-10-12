@@ -2,7 +2,7 @@
 
 **Mode Eksekusi:** OTONOM  
 **Tanggal Terakhir Diperbarui:** 2026-10-12  
-**Fase Saat Ini:** Fase 2 (Selesai) → Memulai Fase 3 (Autentikasi & Persistensi)  
+**Fase Saat Ini:** Fase 3 (Selesai) → Memulai Fase 4 (Inti Nutrisi)  
 **Branch Git:** `feat/cal-build`
 
 ---
@@ -12,7 +12,7 @@
 | ID | Fitur | Status | Bukti / Pengujian | Catatan & Keterbatasan |
 |:---|:---|:---:|:---|:---|
 | **F00** | Fondasi & Arsitektur | TERVERIFIKASI | `flutter test` (4 tests passed), `vitest` (2 tests passed), `flutter analyze` clean | Tema Flutter Emerald/Orange/Indigo, CalMacroColors ThemeExtension, GoRouter 4 tabs, TokenStorage, ApiClient Dio, OfflineQueue UUIDv4 |
-| **F01** | Akun, Profil & Target Nutrisi | BELUM | Belum diuji | Register, login, logout, age gate 18+, Mifflin-St Jeor, target makro |
+| **F01** | Akun, Profil & Target Nutrisi | TERVERIFIKASI | `vitest tests/nutritionCalculator.test.ts` (5 passed), `vitest tests/authAndProfile.test.ts` (11 passed), `flutter test test/auth_flow_test.dart` (3 passed) | Register, login, refresh rotation, age gate >= 18 strict, rumus Mifflin-St Jeor, batas lantai 1200/1500 kkal, override target manual, persistensi PostgreSQL |
 | **F02** | Foto Makanan (AI Vision) | BELUM | Belum diuji | Vision model + JSON schema, crop/kompres, review & edit sebelum simpan |
 | **F03** | Barcode Scanner (Open Food Facts) | BELUM | Belum diuji | Scanner kamera, query OFF API cache, fallback manual entry |
 | **F04** | Teks Bahasa Sehari-hari | BELUM | Belum diuji | LLM entity extraction (satuan lokal: centong, potong, sdm), normalisasi gram |
@@ -33,7 +33,7 @@
 | **F19** | Insight Harian & Mingguan | BELUM | Belum diuji | Query deterministik aktual (bedakan tanpa data vs nol), narasi AI |
 | **F20** | Air, Langkah & Aktivitas | BELUM | Belum diuji | Manual water tracking; Health Connect / Apple Health abstraction |
 | **F21** | Notifikasi & Pengingat | BELUM | Belum diuji | Local notifications non-shaming, push abstraction |
-| **F22** | Pengaturan, Ekspor & Hapus Akun | BELUM | Belum diuji | Privasi, ekspor JSON/CSV, hard delete backend cascade |
+| **F22** | Pengaturan, Ekspor & Hapus Akun | SEBAGIAN | `vitest tests/authAndProfile.test.ts` (export & hard delete passed) | Ekspor JSON akun lengkap & hard delete akun backend cascade (UU PDP) terverifikasi; pengaturan privasi & notifikasi akan diselesaikan di Fase 8 |
 
 ---
 
@@ -41,7 +41,7 @@
 
 1. [x] **Fase 1: Audit Sistem & Lingkungan** (Selesai)
 2. [x] **Fase 2: Fondasi & Desain** (F00 Selesai & Terverifikasi)
-3. [ ] **Fase 3: Autentikasi & Persistensi** (F01, F22 bagian akun/ekspor/penghapusan)
+3. [x] **Fase 3: Autentikasi & Persistensi** (F01 Selesai & Terverifikasi, F22 sebagian)
 4. [ ] **Fase 4: Inti Nutrisi** (F05, F06, F07, F03, F20 air, Food DB & Unit Conversion)
 5. [ ] **Fase 5: AI Makanan & Coach** (F02, F04, F08)
 6. [ ] **Fase 6: Resep & Rencana** (F09, F10, F11)
@@ -52,8 +52,9 @@
 ---
 
 ## 3. Langkah Berikutnya
-- Melanjutkan ke Fase 3: Autentikasi & Persistensi.
-- Implementasi endpoint auth (register, login, refresh rotation, logout, export, hard delete).
-- Implementasi kalkulator Mifflin-St Jeor di backend dan sinkronisasi target nutrisi.
-- Implementasi auth repository & state Riverpod di Flutter, layar login/register dengan validasi age gate 18+.
-- Uji integrasi auth backend dan widget/flow test Flutter.
+- Melanjutkan ke Fase 4: Inti Nutrisi (F05, F06, F07, F03, F20 air).
+- Implementasi API database makanan: pencarian toleran salah ketik (synonym, ILIKE), custom food creation, barcode query Open Food Facts cache.
+- Implementasi endpoint pencatatan makanan: `/nutrition/log` (breakfast, lunch, dinner, snack), snapshot nilai gizi, auto-recalculate total, update dan delete item.
+- Implementasi pencatatan air harian (`/nutrition/water`).
+- Integrasi ke UI mobile: NutritionScreen dengan 4 slot waktu makan, search modal, barcode scan fallback, water logger.
+- Uji integrasi backend dan widget test.
