@@ -34,6 +34,7 @@ class NutritionStateNotifier extends StateNotifier<AsyncValue<DailyNutritionSumm
   Future<void> logFood({
     required String mealType,
     FoodItem? foodItem,
+    String? foodItemId,
     required String foodName,
     required double servingQty,
     required String servingUnit,
@@ -47,7 +48,7 @@ class NutritionStateNotifier extends StateNotifier<AsyncValue<DailyNutritionSumm
       await _repository.logMealItem(
         logDate: _currentDate,
         mealType: mealType,
-        foodItemId: foodItem?.id,
+        foodItemId: foodItemId ?? foodItem?.id,
         foodName: foodName,
         servingQty: servingQty,
         servingUnit: servingUnit,

@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../domain/nutrition_models.dart';
+import 'ai_coach_screen.dart';
+import 'ai_vision_food_sheet.dart';
 import 'food_search_modal.dart';
 import 'nutrition_state_notifier.dart';
+import 'text_food_entry_dialog.dart';
 
 class NutritionScreen extends ConsumerWidget {
   const NutritionScreen({super.key});
@@ -15,6 +18,24 @@ class NutritionScreen extends ConsumerWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => FoodSearchModal(mealType: mealType, mealTitle: mealTitle),
+    );
+  }
+
+  void _openAiVision(BuildContext context, String mealType, String mealTitle) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => AiVisionFoodSheet(mealType: mealType, mealTitle: mealTitle),
+    );
+  }
+
+  void _openTextEntry(BuildContext context, String mealType, String mealTitle) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => TextFoodEntryDialog(mealType: mealType, mealTitle: mealTitle),
     );
   }
 
@@ -35,6 +56,16 @@ class NutritionScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Nutrisi & Makanan', style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.auto_awesome_rounded, color: AppColors.primary),
+            tooltip: 'Tanya AI Coach',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AiCoachScreen()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.calendar_today_rounded, size: 20),
             tooltip: 'Pilih Tanggal',
@@ -163,6 +194,8 @@ class NutritionScreen extends ConsumerWidget {
                   icon: Icons.wb_sunny_outlined,
                   slot: summary.meals['breakfast'],
                   onAddFood: () => _openFoodSearch(context, 'breakfast', 'Sarapan'),
+                  onAiVision: () => _openAiVision(context, 'breakfast', 'Sarapan'),
+                  onAiText: () => _openTextEntry(context, 'breakfast', 'Sarapan'),
                   onDeleteItem: (itemId) => ref.read(nutritionStateProvider.notifier).deleteItem(itemId),
                 ),
                 const SizedBox(height: 12),
@@ -172,6 +205,8 @@ class NutritionScreen extends ConsumerWidget {
                   icon: Icons.wb_sunny_rounded,
                   slot: summary.meals['lunch'],
                   onAddFood: () => _openFoodSearch(context, 'lunch', 'Makan Siang'),
+                  onAiVision: () => _openAiVision(context, 'lunch', 'Makan Siang'),
+                  onAiText: () => _openTextEntry(context, 'lunch', 'Makan Siang'),
                   onDeleteItem: (itemId) => ref.read(nutritionStateProvider.notifier).deleteItem(itemId),
                 ),
                 const SizedBox(height: 12),
@@ -181,6 +216,8 @@ class NutritionScreen extends ConsumerWidget {
                   icon: Icons.nightlight_round,
                   slot: summary.meals['dinner'],
                   onAddFood: () => _openFoodSearch(context, 'dinner', 'Makan Malam'),
+                  onAiVision: () => _openAiVision(context, 'dinner', 'Makan Malam'),
+                  onAiText: () => _openTextEntry(context, 'dinner', 'Makan Malam'),
                   onDeleteItem: (itemId) => ref.read(nutritionStateProvider.notifier).deleteItem(itemId),
                 ),
                 const SizedBox(height: 12),
@@ -190,6 +227,8 @@ class NutritionScreen extends ConsumerWidget {
                   icon: Icons.local_cafe_outlined,
                   slot: summary.meals['snack'],
                   onAddFood: () => _openFoodSearch(context, 'snack', 'Camilan'),
+                  onAiVision: () => _openAiVision(context, 'snack', 'Camilan'),
+                  onAiText: () => _openTextEntry(context, 'snack', 'Camilan'),
                   onDeleteItem: (itemId) => ref.read(nutritionStateProvider.notifier).deleteItem(itemId),
                 ),
 
@@ -300,6 +339,8 @@ class _MealSlotCard extends StatelessWidget {
   final IconData icon;
   final MealSlot? slot;
   final VoidCallback onAddFood;
+  final VoidCallback onAiVision;
+  final VoidCallback onAiText;
   final ValueChanged<String> onDeleteItem;
 
   const _MealSlotCard({
@@ -307,6 +348,8 @@ class _MealSlotCard extends StatelessWidget {
     required this.icon,
     required this.slot,
     required this.onAddFood,
+    required this.onAiVision,
+    required this.onAiText,
     required this.onDeleteItem,
   });
 
@@ -366,14 +409,32 @@ class _MealSlotCard extends StatelessWidget {
                 ),
             ],
             const SizedBox(height: 12),
-            OutlinedButton.icon(
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('Tambah Makanan'),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size.fromHeight(44),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              onPressed: onAddFood,
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('Tambah Makanan'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(42),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    onPressed: onAddFood,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton.filledTonal(
+                  icon: const Icon(Icons.camera_alt_outlined, size: 20, color: AppColors.primary),
+                  tooltip: 'Foto AI',
+                  onPressed: onAiVision,
+                ),
+                const SizedBox(width: 6),
+                IconButton.filledTonal(
+                  icon: const Icon(Icons.edit_note_rounded, size: 22, color: AppColors.primary),
+                  tooltip: 'Teks AI',
+                  onPressed: onAiText,
+                ),
+              ],
             ),
           ],
         ),

@@ -82,3 +82,22 @@ This log records default decisions, options evaluated, chosen paths, reasons, an
 - **Decision:** Calm modern dark mode default with crisp light mode support; Emerald Green (`#10B981`) primary brand, Vibrant Orange (`#F97316`) for carbs & gym energy, Indigo (`#6366F1`) for protein, Amber (`#F59E0B`) for fat. Touch targets ≥ 48dp on Android and spacing ≥ 8dp.
 - **Reason:** Prevents visual clutter; aligns with UI/UX Pro Max recommendations; promotes focus and health clarity.
 - **Impact if changed:** Visual tokens and widget theming.
+
+---
+
+## 10. Indonesian Natural Language Food Parsing & Local Unit Normalization
+- **Context:** Indonesian users log meals in colloquial language with local household units (e.g., "nasi 2 centong", "2 butir telur rebus", "tempe 3 potong").
+- **Options:** Rely solely on LLM vs regex entity extractor with standard gram conversion table.
+- **Decision:** Hybrid approach: AI provider extracts entities with flexible prefix and postfix grammar support (`<qty> <unit> <food>` or `<food> <qty> <unit>`); code maps local units to gram weights (centong = 100g, potong = 50g, butir = 55g, sdm = 15g) and calculates nutrition deterministically from verified catalog.
+- **Reason:** Complies with Section 3 rule: "Numbers calculated in code, not LLM". Transparent, reproducible, and verifiable.
+- **Impact if changed:** Guarantees caloric integrity regardless of LLM hallucination.
+
+---
+
+## 11. AI Vision Transparency & Medical Safety Guardrails
+- **Context:** Camera-based food logging and contextual AI nutrition coaching.
+- **Options:** Present AI calorie estimates as authoritative vs prominent estimate badge and mandatory user review.
+- **Decision:** Every food identified via AI vision displays a prominent "Estimasi AI" badge with confidence score and interactive portion adjuster. AI Coach chat includes strict medical disclaimers ("Bukan pengganti konsultasi medis"), enforces calorie floor limits, and rejects extreme crash dieting requests.
+- **Reason:** Ethical AI principles and user safety; prevents unhealthy dietary behaviors.
+- **Impact if changed:** Mitigates liability and provides superior UX trust.
+
