@@ -10,6 +10,9 @@ import { recipeRouter } from './modules/recipes/recipeRoutes.js';
 import { plannerRouter } from './modules/recipes/plannerRoutes.js';
 import { workoutRouter } from './modules/workouts/workoutRoutes.js';
 import { bodyRouter } from './modules/workouts/bodyRoutes.js';
+import gamificationRouter from './modules/gamification/gamificationRoutes.js';
+import communityRouter from './modules/community/communityRoutes.js';
+import notificationRouter from './modules/notifications/notificationRoutes.js';
 
 export const app = express();
 
@@ -40,6 +43,9 @@ app.use('/api/v1/recipes', recipeRouter);
 app.use('/api/v1/planner', plannerRouter);
 app.use('/api/v1/workouts', workoutRouter);
 app.use('/api/v1/body', bodyRouter);
+app.use('/api/v1/gamification', gamificationRouter);
+app.use('/api/v1/community', communityRouter);
+app.use('/api/v1/notifications', notificationRouter);
 
 // Global error handler
 app.use(errorHandler);

@@ -15,9 +15,12 @@ CREATE TABLE IF NOT EXISTS users (
     activity_level VARCHAR(30) DEFAULT 'sedentary',
     goal VARCHAR(30) DEFAULT 'maintain',
     timezone VARCHAR(50) DEFAULT 'Asia/Jakarta',
+    notification_preferences JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS notification_preferences JSONB DEFAULT '{}';
 
 -- 2. User Nutrition Targets
 CREATE TABLE IF NOT EXISTS user_nutrition_targets (

@@ -2,7 +2,7 @@
 
 **Mode Eksekusi:** OTONOM  
 **Tanggal Terakhir Diperbarui:** 2026-10-12  
-**Fase Saat Ini:** Fase 7 (Selesai & Terverifikasi) → Memulai Fase 8 (Gamifikasi, Komunitas & Notifikasi: F16, F17, F18, F20, F21)  
+**Fase Saat Ini:** Fase 8 (Selesai & Terverifikasi) → Memulai Fase 9 (Insight, Integrasi Akhir & Verifikasi: F19, F22 UI, Full Regression, Clean ZIP)  
 **Branch Git:** `feat/cal-build`
 
 ---
@@ -27,13 +27,13 @@
 | **F13** | Pelacak Gym & Sesi Latihan | TERVERIFIKASI | `vitest tests/workoutsAndProgress.test.ts`, `flutter test test/workout_flow_test.dart` | 81 katalog latihan gym, sesi latihan aktif, set/reps/weight logging, rest timer 90s, akumulasi total beban volume kg |
 | **F14** | Program & Rutinitas Latihan | TERVERIFIKASI | `vitest tests/workoutsAndProgress.test.ts`, `flutter test test/workout_flow_test.dart` | Rutinitas kustom & template, mulai sesi langsung dari rutinitas, deteksi otomatis Rekor Pribadi (PR) dengan rumus Brzycki 1RM |
 | **F15** | AI Workout Generator | TERVERIFIKASI | `vitest tests/workoutsAndProgress.test.ts`, `flutter test test/workout_flow_test.dart` | Generator rutinitas terstruktur otomatis berdasarkan goal, hari per minggu, dan alat, otomatis tersimpan ke DB rutinitas |
-| **F16** | XP, Level & Achievements | BELUM | Belum diuji | Event idempoten, audit log, limit XP harian (cap 500 XP), reward kebiasaan sehat |
-| **F17** | Tantangan & Peringkat (Leaderboard) | BELUM | Belum diuji | Daily/weekly challenge, streak, XP leaderboard dengan tie-break Asia/Jakarta |
-| **F18** | Komunitas & Grup | BELUM | Belum diuji | Grup publik/privat, post, reaction, report & moderasi konten |
-| **F19** | Insight Harian & Mingguan | BELUM | Belum diuji | Query deterministik aktual (bedakan tanpa data vs nol), ringkasan progres mingguan |
-| **F20** | Air, Langkah & Aktivitas | SEBAGIAN | `vitest tests/nutrition.test.ts`, `flutter test test/nutrition_flow_test.dart` | Pencatatan air manual (+250ml, +500ml) TERVERIFIKASI; sensor langkah/aktivitas diuji di Fase 8 |
-| **F21** | Notifikasi & Pengingat | BELUM | Belum diuji | Local notifications non-shaming, pengingat makan & hidrasi |
-| **F22** | Pengaturan, Ekspor & Hapus Akun | SEBAGIAN | `vitest tests/authAndProfile.test.ts` (export & hard delete passed) | Ekspor JSON akun lengkap & hard delete akun backend cascade (UU PDP) terverifikasi; integrasi UI di Fase 8/9 |
+| **F16** | XP, Level & Achievements | TERVERIFIKASI | `vitest tests/gamificationAndCommunity.test.ts` (11 passed), `flutter test test/gamification_community_flow_test.dart` | Event XP idempoten, audit log, batas cap harian 500 XP, rumus level progresif, katalog & evaluasi lencana prestasi kebiasaan |
+| **F17** | Tantangan & Peringkat (Leaderboard) | TERVERIFIKASI | `vitest tests/gamificationAndCommunity.test.ts`, `flutter test test/gamification_community_flow_test.dart` | Leaderboard mingguan teragregasi zona kanonik Asia/Jakarta, tie-break adil (waktu capaian awal), tantangan aktif harian/mingguan |
+| **F18** | Komunitas & Grup | TERVERIFIKASI | `vitest tests/gamificationAndCommunity.test.ts`, `flutter test test/gamification_community_flow_test.dart` | Buat & gabung grup publik/privat, posting feed (+15 XP), reaksi kudos ❤️, komentar, moderasi & pelaporan konten ⚠️ |
+| **F19** | Insight Harian & Mingguan | BELUM | Akan diselesaikan di Fase 9 | Query deterministik aktual (bedakan tanpa data vs nol), ringkasan tren & saran kebiasaan |
+| **F20** | Air, Langkah & Aktivitas | TERVERIFIKASI | `vitest tests/nutrition.test.ts`, `flutter test test/gamification_community_flow_test.dart` | Pencatatan air manual (+250ml, +500ml) & abstraksi sensor Health Connect (langkah & kalori aktif) dengan graceful fallback |
+| **F21** | Notifikasi & Pengingat | TERVERIFIKASI | `vitest tests/gamificationAndCommunity.test.ts`, `flutter test test/gamification_community_flow_test.dart` | Pengingat jadwal makan (sarapan, siang, malam), hidrasi air tiap 2 jam, toggle nada santun & suportif (*non-shaming*) |
+| **F22** | Pengaturan, Ekspor & Hapus Akun | SEBAGIAN | `vitest tests/authAndProfile.test.ts` (export & hard delete passed) | Backend ekspor JSON data pribadi lengkap & hard delete akun cascade (UU PDP) terverifikasi; UI pengaturan akan disempurnakan di Fase 9 |
 
 ---
 
@@ -46,26 +46,26 @@
 5. [x] **Fase 5: AI Makanan & Coach** (F02, F04, F08 Selesai & Terverifikasi)
 6. [x] **Fase 6: Resep & Rencana** (F09, F10, F11 Selesai & Terverifikasi)
 7. [x] **Fase 7: Gym & Progres** (F12, F13, F14, F15 Selesai & Terverifikasi)
-8. [ ] **Fase 8: XP, Peringkat, Komunitas & Notifikasi** (F16, F17, F18, F20, F21)
-9. [ ] **Fase 9: Insight, Integrasi Akhir & Verifikasi** (F19, Full Regression Suite, Clean ZIP)
+8. [x] **Fase 8: XP, Peringkat, Komunitas & Notifikasi** (F16, F17, F18, F20, F21 Selesai & Terverifikasi)
+9. [ ] **Fase 9: Insight, Integrasi Akhir & Verifikasi** (F19, F22 UI, Full Regression Suite, Clean ZIP)
 
 ---
 
-## 3. Hasil Pengujian Terakhir (Fase 7)
-- **Backend Vitest:** 54 passed (7 test files, 100% pass)
-  - `tests/workoutsAndProgress.test.ts`: 12 tests passed
-- **Flutter Widget Tests:** 20 passed (7 test files, 100% pass)
-  - `test/workout_flow_test.dart`: 5 tests passed (WorkoutsScreen tabs, ActiveWorkoutSessionSheet, AiWorkoutGeneratorModal, BodyMeasurementModal)
+## 3. Hasil Pengujian Terakhir (Fase 8)
+- **Backend Vitest:** 65 passed (8 test files, 100% pass)
+  - `tests/gamificationAndCommunity.test.ts`: 11 tests passed
+- **Flutter Widget Tests:** 25 passed (8 test files, 100% pass)
+  - `test/gamification_community_flow_test.dart`: 5 tests passed (CommunityScreen, CreatePostModal, AchievementsModal, NotificationSettingsModal)
 
 ---
 
-## 4. Langkah Berikutnya (Fase 8: XP, Peringkat, Komunitas & Notifikasi)
-- **F16: XP, Level & Achievements**
-  - Database table: `xp_audit_logs`, `user_levels`, `achievements`, `user_achievements`.
-  - Idempotency key per aksi: log meal (+10 XP), log workout (+25 XP), cap 500 XP per hari per user.
-- **F17: Tantangan & Peringkat (Leaderboard)**
-  - Leaderboard mingguan teragregasi dengan timezone kanonik Asia/Jakarta, tie-break adil (waktu capaian XP lebih awal).
-- **F18: Komunitas & Grup**
-  - CRUD grup publik/privat, forum postingan berbagi meal & workout log, reaksi semangat (kudos), moderasi & pelaporan konten.
-- **F20 & F21: Notifikasi Lokal & Abstraksi Sensor Health**
-  - Layanan notifikasi lokal ramah & edukatif (pengingat air, evaluasi hari ini), fallback sehat jika sensor tidak aktif.
+## 4. Langkah Berikutnya (Fase 9: Insight, Integrasi Akhir & Verifikasi)
+- **F19: Insight Harian & Mingguan**
+  - Query analisis deterministik: rata-rata kalori 7 hari, kepatuhan protein (%), volume beban gym mingguan, bedakan tegas status "tanpa data" vs "angka nol".
+  - Endpoint `GET /api/v1/insights/weekly` dan tampilan UI kartu insight di Today Screen & Profile.
+- **F22 UI: Pengaturan Akun, Ekspor JSON & Hapus Akun**
+  - Tampilan Profil: Tombol "Ekspor Data Pribadi (JSON)" dan "Hapus Akun Permanen (Cascade)" terhubung langsung ke API `/auth/export-data` dan `/auth/delete-account`.
+- **Full Regression & Final Verification**:
+  - Jalankan seluruh tes backend dan seluruh tes Flutter.
+  - Bangun arsip `cal-project.zip` yang bersih (tanpa node_modules, .git, build artifacts).
+  - Tulis laporan final komprehensif.

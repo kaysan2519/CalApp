@@ -146,5 +146,33 @@ This log records default decisions, options evaluated, chosen paths, reasons, an
 - **Reason:** Prevents calorie targets from becoming stale as the user progresses in their fitness journey; ensures holistic consistency between gym and nutrition modules.
 - **Impact if changed:** TDEE calculations would drift from actual body weight.
 
+---
+
+## 17. Gamification XP Idempotency, 500 XP Daily Cap & Progressive Level Curve
+- **Context:** Rewarding healthy habits (meal logging +10 XP, gym workout +25 XP, community post +15 XP) without opening loopholes for spam, botting, or gaming the system.
+- **Options:** Uncapped XP vs strict daily cap with audit logs and idempotent keys.
+- **Decision:** Every XP transaction requires an `idempotency_key` stored in `xp_audit_logs`. A strict ceiling of **500 XP/day** per user is enforced at the database level. User level is calculated deterministically via progressive square curve `Level = Math.floor(Math.sqrt(total_xp / 100)) + 1`.
+- **Reason:** Anti-cheat integrity; protects leaderboard fairness; encourages consistent daily engagement over unhealthy binge-activity.
+- **Impact if changed:** Uncapped XP invites spam logging; altering formula resets user levels.
+
+---
+
+## 18. Weekly Leaderboard Canonical Timezone (Asia/Jakarta) & Fair Tie-Breaking
+- **Context:** Global leaderboards across different user timezones can cause unfair reset windows and rank disputes.
+- **Options:** Individual user timezone resets vs single canonical server timezone.
+- **Decision:** **Asia/Jakarta** is chosen as the canonical timezone for all weekly leaderboard aggregations (`date_trunc('week', NOW() AT TIME ZONE 'Asia/Jakarta')`). Tie-breaking is deterministic: users with identical XP totals are ranked by `MIN(created_at)` (who achieved the XP earlier).
+- **Reason:** Fulfills Section 5 specifications; provides complete transparency and mathematical predictability.
+- **Impact if changed:** Changing timezone changes reset boundaries for all active users.
+
+---
+
+## 19. Non-Shaming Notifications & Health Sensor Graceful Fallback
+- **Context:** Push/local reminder copy (meals, hydration, workouts) and step tracking sensors (Health Connect / Apple Health).
+- **Options:** Aggressive urgency notifications vs gentle, supportive (*non-shaming*) copy.
+- **Decision:** All default reminders use supportive, positive framing (e.g., "Satu gelas air sejuk akan menyegarkan kembali konsentrasi tubuhmu", "Waktunya sarapan bergizi untuk mengisi energimu"). Sensor health abstraction is guarded with safe dev/headless fallbacks, never crashing if permissions or hardware sensors are absent.
+- **Reason:** Promotes long-term mental well-being and positive relationship with food/fitness; prevents runtime crashes on diverse devices.
+- **Impact if changed:** Crucial for user retention and ethical fitness app compliance.
+
+
 
 
