@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { NutritionService } from './nutritionService.js';
+import { routeParam } from '../../middleware/routeParam.js';
 
 const logMealItemSchema = z.object({
   logDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format tanggal harus YYYY-MM-DD'),
@@ -60,7 +61,7 @@ export class NutritionController {
 
   static async getProductByBarcode(req: Request, res: Response, next: NextFunction) {
     try {
-      const barcode = req.params.barcode;
+      const barcode = routeParam(req.params, 'barcode');
       const foods = await NutritionService.searchFoods(undefined, barcode);
       if (foods.length === 0) {
         return res.status(404).json({
@@ -127,7 +128,7 @@ export class NutritionController {
   static async updateMealItem(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.id;
-      const itemId = req.params.itemId;
+      const itemId = routeParam(req.params, 'itemId');
       const validated = updateMealItemSchema.parse(req.body);
       const item = await NutritionService.updateMealItem(userId, itemId, validated.servingQty);
       res.json({
@@ -143,7 +144,7 @@ export class NutritionController {
   static async deleteMealItem(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.id;
-      const itemId = req.params.itemId;
+      const itemId = routeParam(req.params, 'itemId');
       await NutritionService.deleteMealItem(userId, itemId);
       res.json({
         success: true,

@@ -1,13 +1,16 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import { app } from '../src/app.js';
 import { pool } from '../src/config/db.js';
+import { gamificationService } from '../src/modules/gamification/gamificationService.js';
 
 describe('Phase 8 - Gamification, Community & Notifications Integration', () => {
   let authToken: string;
   let userId: string;
   let testGroupId: string;
   let testPostId: string;
+  let mealActivityId: string;
+  let exerciseId: string;
 
   beforeAll(async () => {
     // Register unique user
@@ -19,90 +22,106 @@ describe('Phase 8 - Gamification, Community & Notifications Integration', () => 
         password: 'Password123!',
         name: 'Budi Gamifier',
         age: 25,
+        heightCm: 170,
+        weightKg: 65,
       });
 
     expect(res.status).toBe(201);
     authToken = res.body.data.accessToken;
     userId = res.body.data.user.id;
+    const exercise = await pool.query('SELECT id FROM exercises LIMIT 1');
+    exerciseId = exercise.rows[0].id;
+
+    const meal = await pool.query(
+      `INSERT INTO meal_logs (user_id, log_date, meal_type) VALUES ($1, CURRENT_DATE, 'breakfast') RETURNING id`,
+      [userId],
+    );
+    mealActivityId = meal.rows[0].id;
+    await pool.query(
+      `INSERT INTO meal_log_items (meal_log_id, food_name, serving_qty, serving_unit, calories, protein_g, carbs_g, fat_g)
+       VALUES ($1, 'Test meal', 1, 'porsi', 400, 25, 50, 10)`,
+      [mealActivityId],
+    );
+  });
+
+  afterAll(async () => {
+    if (userId) await pool.query('DELETE FROM users WHERE id = $1', [userId]);
   });
 
   describe('F16: XP, Leveling & Achievements', () => {
     it('awards XP to user and calculates level progressively', async () => {
-      const idempotencyKey = `award_${Date.now()}_1`;
       const res = await request(app)
         .post('/api/v1/gamification/award-xp')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
-          eventCode: 'log_meal',
-          xpAmount: 50,
-          idempotencyKey,
+          eventCode: 'meal_logged',
+          activityId: mealActivityId,
+          xpAmount: 100000,
         });
 
       expect(res.status).toBe(200);
       expect(res.body.data.awarded).toBe(true);
-      expect(res.body.data.xpAmount).toBe(50);
-      expect(res.body.data.totalXp).toBe(50);
+      expect(res.body.data.xpAmount).toBe(10);
+      expect(res.body.data.totalXp).toBe(10);
       expect(res.body.data.currentLevel).toBe(1);
     });
 
-    it('enforces idempotency on same event key without duplicate XP', async () => {
-      const idempotencyKey = `award_duplicate_test_${Date.now()}`;
-
-      // First call
+    it('enforces idempotency for the same recorded activity', async () => {
+      const workout = await pool.query(
+        `INSERT INTO workout_sessions (user_id, title, status, completed_at)
+         VALUES ($1, 'Verified test session', 'completed', NOW()) RETURNING id`,
+        [userId],
+      );
+      const activityId = workout.rows[0].id;
+      await pool.query(
+        `INSERT INTO workout_sets (session_id, exercise_id, set_number, reps, weight_kg)
+         VALUES ($1, $2, 1, 8, 20)`,
+        [activityId, exerciseId],
+      );
       const res1 = await request(app)
         .post('/api/v1/gamification/award-xp')
         .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          eventCode: 'log_workout',
-          xpAmount: 25,
-          idempotencyKey,
-        });
+        .send({ eventCode: 'workout_completed', activityId });
       expect(res1.body.data.awarded).toBe(true);
       const totalXpAfterFirst = res1.body.data.totalXp;
 
-      // Duplicate call
       const res2 = await request(app)
         .post('/api/v1/gamification/award-xp')
         .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          eventCode: 'log_workout',
-          xpAmount: 25,
-          idempotencyKey,
-        });
+        .send({ eventCode: 'workout_completed', activityId, xpAmount: 100000 });
       expect(res2.body.data.awarded).toBe(false);
       expect(res2.body.data.reason).toBe('duplicate_event');
       expect(res2.body.data.totalXp).toBe(totalXpAfterFirst);
     });
 
     it('enforces daily XP cap of 500 XP strictly', async () => {
-      const idempotencyKey = `award_cap_test_${Date.now()}`;
-      // Request huge amount
+      let result: any;
+      for (let index = 0; index < 22; index += 1) {
+        const workout = await pool.query(
+          `INSERT INTO workout_sessions (user_id, title, status, completed_at)
+           VALUES ($1, $2, 'completed', NOW()) RETURNING id`,
+          [userId, `Cap test session ${index}`],
+        );
+        await pool.query(
+          `INSERT INTO workout_sets (session_id, exercise_id, set_number, reps, weight_kg)
+           VALUES ($1, $2, 1, 8, 20)`,
+          [workout.rows[0].id, exerciseId],
+        );
+        result = await gamificationService.awardActivityXp(userId, 'workout_completed', workout.rows[0].id);
+      }
+      expect(result.dailyXpEarned).toBe(500);
+      expect(result.awarded).toBe(false);
+      expect(result.reason).toBe('daily_cap_reached');
+      expect(result.dailyCapReached).toBe(true);
+    });
+
+    it('rejects XP claims for an activity owned by another account or not recorded', async () => {
       const res = await request(app)
         .post('/api/v1/gamification/award-xp')
         .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          eventCode: 'bonus_event',
-          xpAmount: 600,
-          idempotencyKey,
-        });
-
-      expect(res.status).toBe(200);
-      expect(res.body.data.dailyXpEarned).toBeLessThanOrEqual(500);
-
-      // Subsequent award on same day should be capped
-      const resCapped = await request(app)
-        .post('/api/v1/gamification/award-xp')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          eventCode: 'another_bonus',
-          xpAmount: 50,
-          idempotencyKey: `award_over_cap_${Date.now()}`,
-        });
-
-      expect(resCapped.status).toBe(200);
-      expect(resCapped.body.data.awarded).toBe(false);
-      expect(resCapped.body.data.reason).toBe('daily_cap_reached');
-      expect(resCapped.body.data.dailyCapReached).toBe(true);
+        .send({ eventCode: 'workout_completed', activityId: '00000000-0000-4000-8000-000000000001', xpAmount: 500000 });
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe('XP_ACTIVITY_NOT_FOUND');
     });
 
     it('fetches gamification profile and achievements list', async () => {
@@ -114,6 +133,8 @@ describe('Phase 8 - Gamification, Community & Notifications Integration', () => 
       expect(resProfile.body.data.totalXp).toBeGreaterThanOrEqual(500);
       expect(resProfile.body.data.currentLevel).toBeGreaterThanOrEqual(2);
       expect(resProfile.body.data.dailyXpCap).toBe(500);
+      expect(resProfile.body.data.currentRank.name).toBe('Silver');
+      expect(resProfile.body.data.xpHistory.length).toBeGreaterThan(0);
 
       const resAch = await request(app)
         .get('/api/v1/gamification/achievements')
@@ -136,6 +157,12 @@ describe('Phase 8 - Gamification, Community & Notifications Integration', () => 
       expect(res.body.data.canonicalTimezone).toBe('Asia/Jakarta');
       expect(Array.isArray(res.body.data.leaderboard)).toBe(true);
       expect(res.body.data.currentUserRank).toBeDefined();
+      expect(res.body.data.currentUserRank.points_to_next_rank).toBeDefined();
+      const global = await request(app)
+        .get('/api/v1/gamification/leaderboard?period=global')
+        .set('Authorization', `Bearer ${authToken}`);
+      expect(global.status).toBe(200);
+      expect(global.body.data.period).toBe('global');
     });
 
     it('returns active challenges catalog', async () => {

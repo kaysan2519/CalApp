@@ -73,4 +73,13 @@ export class AIController {
       next(err);
     }
   }
+
+  static async profileRecommendations(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await AIService.generateProfileRecommendations(req.user!.id);
+      res.json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
 }

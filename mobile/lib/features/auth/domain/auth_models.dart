@@ -48,6 +48,16 @@ class User {
   final String goal;
   final String timezone;
   final NutritionTargets? nutritionTargets;
+  final double? targetWeightKg;
+  final String trainingExperience;
+  final int trainingDaysPerWeek;
+  final List<String> trainingSchedule;
+  final List<String> availableEquipment;
+  final List<String> foodPreferences;
+  final List<String> allergies;
+  final List<String> dietaryRestrictions;
+  final String? activityLimitations;
+  final bool onboardingCompleted;
 
   User({
     required this.id,
@@ -61,7 +71,22 @@ class User {
     required this.goal,
     required this.timezone,
     this.nutritionTargets,
+    this.targetWeightKg,
+    this.trainingExperience = 'beginner',
+    this.trainingDaysPerWeek = 3,
+    this.trainingSchedule = const [],
+    this.availableEquipment = const [],
+    this.foodPreferences = const [],
+    this.allergies = const [],
+    this.dietaryRestrictions = const [],
+    this.activityLimitations,
+    this.onboardingCompleted = false,
   });
+
+  static List<String> _readStringList(dynamic value) {
+    if (value is! List) return const [];
+    return value.whereType<String>().toList(growable: false);
+  }
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
@@ -78,6 +103,18 @@ class User {
       nutritionTargets: json['nutritionTargets'] != null
           ? NutritionTargets.fromJson(json['nutritionTargets'])
           : null,
+      targetWeightKg: json['target_weight_kg'] != null
+          ? (json['target_weight_kg'] as num).toDouble()
+          : null,
+      trainingExperience: json['training_experience'] ?? 'beginner',
+      trainingDaysPerWeek: (json['training_days_per_week'] as num?)?.toInt() ?? 3,
+      trainingSchedule: _readStringList(json['training_schedule']),
+      availableEquipment: _readStringList(json['available_equipment']),
+      foodPreferences: _readStringList(json['food_preferences']),
+      allergies: _readStringList(json['allergies']),
+      dietaryRestrictions: _readStringList(json['dietary_restrictions']),
+      activityLimitations: json['activity_limitations'] as String?,
+      onboardingCompleted: json['onboarding_completed'] == true,
     );
   }
 }

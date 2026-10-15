@@ -23,8 +23,8 @@ class GamificationRepository {
     return list.map((e) => AchievementItem.fromJson(e as Map<String, dynamic>)).toList();
   }
 
-  Future<Map<String, dynamic>> getLeaderboard({int limit = 50}) async {
-    final res = await apiClient.get('/gamification/leaderboard', queryParameters: {'limit': limit});
+  Future<Map<String, dynamic>> getLeaderboard({int limit = 50, String period = 'weekly'}) async {
+    final res = await apiClient.get('/gamification/leaderboard', queryParameters: {'limit': limit, 'period': period});
     final data = res.data['data'];
     final rawList = data['leaderboard'] as List;
     final items = rawList.map((e) => LeaderboardItem.fromJson(e as Map<String, dynamic>)).toList();
@@ -36,6 +36,7 @@ class GamificationRepository {
       'leaderboard': items,
       'currentUserRank': userRank,
       'canonicalTimezone': data['canonicalTimezone'] ?? 'Asia/Jakarta',
+      'period': data['period'] ?? period,
     };
   }
 
@@ -47,17 +48,13 @@ class GamificationRepository {
 
   Future<Map<String, dynamic>> awardXp({
     required String eventCode,
-    required int xpAmount,
-    required String idempotencyKey,
-    Map<String, dynamic>? metadata,
+    required String activityId,
   }) async {
     final res = await apiClient.post(
       '/gamification/award-xp',
       data: {
         'eventCode': eventCode,
-        'xpAmount': xpAmount,
-        'idempotencyKey': idempotencyKey,
-        'metadata': metadata ?? {},
+        'activityId': activityId,
       },
     );
     return res.data['data'] as Map<String, dynamic>;

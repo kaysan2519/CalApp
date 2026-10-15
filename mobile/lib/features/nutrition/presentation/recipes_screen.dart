@@ -154,7 +154,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                         : ListView.separated(
                             padding: const EdgeInsets.all(16),
                             itemCount: _recipes.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 12),
+                            separatorBuilder: (_, _) => const SizedBox(height: 12),
                             itemBuilder: (context, index) {
                               final recipe = _recipes[index];
                               return Card(
@@ -390,7 +390,7 @@ class _RecipeDetailSheetState extends ConsumerState<_RecipeDetailSheet> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _selectedMealType,
+                    initialValue: _selectedMealType,
                     decoration: InputDecoration(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -422,7 +422,7 @@ class _RecipeDetailSheetState extends ConsumerState<_RecipeDetailSheet> {
                               logDate: today,
                             );
                             await ref.read(nutritionStateProvider.notifier).loadDailySummary(today);
-                            if (mounted) {
+                            if (context.mounted) {
                               final messenger = ScaffoldMessenger.of(context);
                               if (Navigator.canPop(context)) {
                                 Navigator.pop(context);
@@ -435,7 +435,7 @@ class _RecipeDetailSheetState extends ConsumerState<_RecipeDetailSheet> {
                               );
                             }
                           } catch (_) {
-                            if (mounted) {
+                            if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(backgroundColor: AppColors.error, content: Text('Gagal mencatat resep ke log.')),
                               );

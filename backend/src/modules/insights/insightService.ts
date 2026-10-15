@@ -23,10 +23,12 @@ export class InsightService {
          FROM user_nutrition_targets WHERE user_id = $1`,
         [userId]
       );
-
-      const targetCalories = targetRes.rows[0]?.target_calories || 2000;
-      const targetProtein = Number(targetRes.rows[0]?.target_protein_g || 120);
-      const targetWater = targetRes.rows[0]?.target_water_ml || 2000;
+      const targets = targetRes.rows[0];
+      if (!targets) {
+        throw { statusCode: 409, code: 'NUTRITION_TARGETS_NOT_SET', message: 'Target nutrisi belum tersedia untuk profil ini.' };
+      }
+      const targetCalories = Number(targets.target_calories);
+      const targetProtein = Number(targets.target_protein_g);
 
       // 2. Fetch last 7 days nutrition logs from meal_logs & meal_log_items
       const nutritionRes = await client.query(

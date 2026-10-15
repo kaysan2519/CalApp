@@ -201,7 +201,7 @@ class _DailyMenuModalState extends ConsumerState<DailyMenuModal> {
               Expanded(
                 child: ListView.separated(
                   itemCount: _plan!.meals.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
                   itemBuilder: (context, index) {
                     final meal = _plan!.meals[index];
                     return Container(

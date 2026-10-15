@@ -17,3 +17,4 @@ aiRouter.post('/coach/chat', AIController.coachChat);
 
 // F15: AI Workout Generator
 aiRouter.post('/workout-generator', AIController.workoutGenerator);
+aiRouter.post('/profile-recommendations', AIController.profileRecommendations);

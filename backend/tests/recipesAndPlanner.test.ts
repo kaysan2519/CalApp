@@ -146,6 +146,16 @@ describe('Phase 6 - Recipes, AI Menu Generator & Unified Planner (Real PostgreSQ
       expect(plan.isWithinSafetyBounds).toBe(true);
       expect(Math.abs(plan.variancePercent)).toBeLessThanOrEqual(25);
     });
+
+    it('rejects a requested menu target below the profile calorie floor', async () => {
+      const res = await request(app)
+        .post('/api/v1/planner/daily-generator')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ targetCalories: 1000 });
+
+      expect(res.status).toBe(422);
+      expect(res.body.error.code).toBe('UNSAFE_CALORIE_TARGET');
+    });
   });
 
   describe('F11 Unified Daily Planner', () => {

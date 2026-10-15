@@ -1,6 +1,7 @@
 {
   "name": "cal-backend",
   "version": "1.0.0",
+  "type": "module",
   "description": "Backend API for Cal Fitness & Nutrition App",
   "main": "dist/index.js",
   "scripts": {

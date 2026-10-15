@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { RecipeService } from './recipeService.js';
+import { routeParam } from '../../middleware/routeParam.js';
 
 const logRecipeSchema = z.object({
   mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']),
@@ -36,7 +37,7 @@ export class RecipeController {
 
   static async getRecipeById(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = routeParam(req.params, 'id');
       const servings = req.query.servings ? Number(req.query.servings) : undefined;
       const recipe = await RecipeService.getRecipeById(id, servings);
 
@@ -52,7 +53,7 @@ export class RecipeController {
   static async logToMeal(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.id;
-      const { id } = req.params;
+      const id = routeParam(req.params, 'id');
       const validated = logRecipeSchema.parse(req.body);
 
       const result = await RecipeService.logRecipeToMeal(

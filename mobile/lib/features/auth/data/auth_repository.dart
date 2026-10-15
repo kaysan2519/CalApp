@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/storage/token_storage.dart';
@@ -74,9 +75,23 @@ class AuthRepository {
         userJson['nutritionTargets'] = data['nutritionTargets'];
       }
       return User.fromJson(userJson);
-    } catch (_) {
-      return null;
+    } on DioException catch (error) {
+      if (error.response?.statusCode == 401) {
+        await tokenStorage.clearTokens();
+        return null;
+      }
+      rethrow;
     }
+  }
+
+  Future<User> updateProfile(Map<String, dynamic> updates) async {
+    final response = await apiClient.put('/profile', data: updates);
+    final data = Map<String, dynamic>.from(response.data['data']);
+    final userJson = Map<String, dynamic>.from(data['user']);
+    if (data['nutritionTargets'] != null) {
+      userJson['nutritionTargets'] = data['nutritionTargets'];
+    }
+    return User.fromJson(userJson);
   }
 
   Future<void> logout() async {

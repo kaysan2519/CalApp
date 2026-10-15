@@ -29,7 +29,7 @@ class RecipeRepository {
     final response = await apiClient.get(
       '/recipes/$id',
       queryParameters: {
-        if (servings != null) 'servings': servings,
+        'servings': ?servings,
       },
     );
     return RecipeItem.fromJson(response.data['data']);
@@ -46,7 +46,7 @@ class RecipeRepository {
       data: {
         'mealType': mealType,
         'servings': servings,
-        if (logDate != null) 'logDate': logDate,
+        'logDate': ?logDate,
       },
     );
     return response.data['data'] as Map<String, dynamic>;
@@ -56,8 +56,8 @@ class RecipeRepository {
     final response = await apiClient.post(
       '/planner/daily-generator',
       data: {
-        if (date != null) 'date': date,
-        if (targetCalories != null) 'targetCalories': targetCalories,
+        'date': ?date,
+        'targetCalories': ?targetCalories,
       },
     );
     return DailyMenuPlan.fromJson(response.data['data']);
@@ -67,7 +67,7 @@ class RecipeRepository {
     final response = await apiClient.get(
       '/planner/daily',
       queryParameters: {
-        if (date != null) 'date': date,
+        'date': ?date,
       },
     );
     return response.data['data'] as Map<String, dynamic>;
@@ -84,10 +84,10 @@ class RecipeRepository {
       '/planner/daily',
       data: {
         'date': date,
-        if (waterTargetMl != null) 'waterTargetMl': waterTargetMl,
-        if (notes != null) 'notes': notes,
-        if (isCompleted != null) 'isCompleted': isCompleted,
-        if (plannedMeals != null) 'plannedMeals': plannedMeals,
+        'waterTargetMl': ?waterTargetMl,
+        'notes': ?notes,
+        'isCompleted': ?isCompleted,
+        'plannedMeals': ?plannedMeals,
       },
     );
     return response.data['data'] as Map<String, dynamic>;

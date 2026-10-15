@@ -595,11 +595,12 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> with SingleTi
             const SizedBox(height: 8),
 
             ...leaderboard.map((item) {
-              final isTop3 = item.rank <= 3;
+              final itemRank = item.rank;
+              final isTop3 = itemRank != null && itemRank <= 3;
               Color badgeColor = Colors.grey;
-              if (item.rank == 1) badgeColor = Colors.amber;
-              if (item.rank == 2) badgeColor = Colors.blueGrey;
-              if (item.rank == 3) badgeColor = Colors.brown;
+              if (itemRank == 1) badgeColor = Colors.amber;
+              if (itemRank == 2) badgeColor = Colors.blueGrey;
+              if (itemRank == 3) badgeColor = Colors.brown;
 
               return Card(
                 margin: const EdgeInsets.only(bottom: 8),
@@ -608,7 +609,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> with SingleTi
                   leading: CircleAvatar(
                     backgroundColor: isTop3 ? badgeColor.withAlpha(40) : Colors.grey.withAlpha(20),
                     foregroundColor: isTop3 ? badgeColor : Colors.white,
-                    child: Text('#${item.rank}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  child: Text('#${itemRank ?? '–'}', style: const TextStyle(fontWeight: FontWeight.bold)),
                   ),
                   title: Text(item.displayName, style: const TextStyle(fontWeight: FontWeight.bold)),
                   subtitle: Text('Level ${item.currentLevel}', style: const TextStyle(fontSize: 11)),

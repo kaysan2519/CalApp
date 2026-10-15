@@ -1,5 +1,11 @@
 import { Request, Response } from 'express';
 import { gamificationService } from './gamificationService.js';
+import { z } from 'zod';
+
+const awardXpSchema = z.object({
+  eventCode: z.enum(['meal_logged', 'workout_completed', 'community_post']),
+  activityId: z.string().uuid(),
+});
 
 export class GamificationController {
   async getProfile(req: Request, res: Response) {
@@ -25,8 +31,13 @@ export class GamificationController {
   async getLeaderboard(req: Request, res: Response) {
     try {
       const userId = req.user!.id;
-      const limit = parseInt(req.query.limit as string, 10) || 50;
-      const leaderboard = await gamificationService.getLeaderboard(userId, limit);
+      const period = typeof req.query.period === 'string' ? req.query.period : 'weekly';
+      if (period !== 'weekly' && period !== 'global') {
+        return res.status(422).json({ success: false, error: { code: 'INVALID_PERIOD', message: 'Periode harus weekly atau global.' } });
+      }
+      const requestedLimit = typeof req.query.limit === 'string' ? Number(req.query.limit) : 50;
+      const limit = Number.isInteger(requestedLimit) ? Math.min(100, Math.max(1, requestedLimit)) : 50;
+      const leaderboard = await gamificationService.getLeaderboard(userId, limit, period);
       return res.json({ status: 'success', data: leaderboard });
     } catch (error: any) {
       return res.status(500).json({ status: 'error', message: error.message });
@@ -46,26 +57,15 @@ export class GamificationController {
   async awardXp(req: Request, res: Response) {
     try {
       const userId = req.user!.id;
-      const { eventCode, xpAmount, idempotencyKey, metadata } = req.body;
-
-      if (!eventCode || typeof xpAmount !== 'number' || !idempotencyKey) {
-        return res.status(400).json({
-          status: 'error',
-          message: 'eventCode, xpAmount (number), and idempotencyKey are required',
-        });
-      }
-
-      const result = await gamificationService.awardXp(
-        userId,
-        eventCode,
-        xpAmount,
-        idempotencyKey,
-        metadata || {}
-      );
+      const { eventCode, activityId } = awardXpSchema.parse(req.body);
+      const result = await gamificationService.awardActivityXp(userId, eventCode, activityId);
 
       return res.json({ status: 'success', data: result });
     } catch (error: any) {
-      return res.status(500).json({ status: 'error', message: error.message });
+      const statusCode = error?.statusCode ?? (error?.name === 'ZodError' ? 422 : 500);
+      const code = error?.code ?? (statusCode === 422 ? 'VALIDATION_ERROR' : 'INTERNAL_SERVER_ERROR');
+      const message = statusCode === 500 ? 'Terjadi kesalahan pada server.' : error.message;
+      return res.status(statusCode).json({ success: false, error: { code, message } });
     }
   }
 }

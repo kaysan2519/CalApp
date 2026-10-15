@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cal/core/network/api_client.dart';
-import 'package:cal/core/storage/token_storage.dart';
 import 'package:cal/features/nutrition/data/recipe_repository.dart';
 import 'package:cal/features/nutrition/data/nutrition_repository.dart';
 import 'package:cal/features/nutrition/domain/recipe_models.dart';
@@ -11,6 +10,10 @@ import 'package:cal/features/nutrition/presentation/nutrition_state_notifier.dar
 import 'package:cal/features/nutrition/presentation/recipes_screen.dart';
 import 'package:cal/features/nutrition/presentation/daily_menu_modal.dart';
 import 'package:cal/features/today/presentation/today_screen.dart';
+import 'package:cal/features/auth/data/auth_repository.dart';
+import 'package:cal/features/auth/domain/auth_models.dart';
+import 'package:cal/features/auth/presentation/auth_state_notifier.dart';
+import 'test_support.dart';
 
 class FakeRecipeRepository extends RecipeRepository {
   FakeRecipeRepository({required super.apiClient});
@@ -175,16 +178,49 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late ApiClient apiClient;
+  late InMemoryTokenStorage tokenStorage;
 
   setUp(() {
-    final tokenStorage = TokenStorage();
+    tokenStorage = InMemoryTokenStorage();
     apiClient = ApiClient(tokenStorage: tokenStorage);
   });
 
   Widget buildTestableWidget(Widget child) {
+    final todayKey = const [
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+      'sunday',
+    ][DateTime.now().weekday - 1];
+    final user = User(
+      id: 'test-user',
+      email: 'test@example.com',
+      name: 'Pengguna Tes',
+      age: 28,
+      gender: 'female',
+      heightCm: 165,
+      weightKg: 65,
+      activityLevel: 'moderate',
+      goal: 'fitness',
+      timezone: 'Asia/Jakarta',
+      trainingSchedule: [todayKey],
+      onboardingCompleted: true,
+    );
+    final authRepository = StaticAuthRepository(
+      apiClient: apiClient,
+      tokenStorage: tokenStorage,
+      user: user,
+    );
+
     return ProviderScope(
       overrides: [
+        tokenStorageProvider.overrideWithValue(tokenStorage),
         apiClientProvider.overrideWithValue(apiClient),
+        authRepositoryProvider.overrideWithValue(authRepository),
+        authStateProvider.overrideWith((ref) => StaticAuthStateNotifier(authRepository, user)),
         recipeRepositoryProvider.overrideWithValue(FakeRecipeRepository(apiClient: apiClient)),
         nutritionRepositoryProvider.overrideWithValue(FakeNutritionRepository(apiClient: apiClient)),
         nutritionStateProvider.overrideWith(
@@ -265,7 +301,7 @@ void main() {
   });
 
   group('F11 Unified Daily Planner Flow (TodayScreen)', () {
-    testWidgets('renders daily nutrition overview, hydration target, routine, and checklist', (tester) async {
+    testWidgets('renders server nutrition totals, hydration target, and profile-based workout schedule', (tester) async {
       tester.view.physicalSize = const Size(800, 1400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
@@ -283,12 +319,10 @@ void main() {
 
       // Hydration & Routine
       expect(find.text('Target Hidrasi'), findsOneWidget);
-      expect(find.text('+250 ml'), findsOneWidget);
+      expect(find.text('1250 / 2500 ml terpenuhi'), findsOneWidget);
       expect(find.text('Jadwal Latihan Hari Ini'), findsOneWidget);
-
-      // Checklist
-      expect(find.text('Checklist Rencana Harian'), findsOneWidget);
-      expect(find.text('Catat semua waktu makan'), findsOneWidget);
+      expect(find.text('Hari ini termasuk jadwal latihan pilihanmu.'), findsOneWidget);
+      expect(find.textContaining('Push Day'), findsNothing);
     });
   });
 }

@@ -26,7 +26,7 @@ class WeeklyInsightSummary {
       hasData: json['hasData'] as bool? ?? false,
       daysLogged: (json['daysLogged'] as num?)?.toInt() ?? 0,
       averageCalories: (json['averageCalories'] as num?)?.toInt() ?? 0,
-      targetCalories: (json['targetCalories'] as num?)?.toInt() ?? 2000,
+      targetCalories: (json['targetCalories'] as num).toInt(),
       calorieDeltaPercent: (json['calorieDeltaPercent'] as num?)?.toInt() ?? 0,
       proteinAdherencePercent: (json['proteinAdherencePercent'] as num?)?.toInt() ?? 0,
       totalWorkoutVolumeKg: (json['totalWorkoutVolumeKg'] as num?)?.toDouble() ?? 0.0,

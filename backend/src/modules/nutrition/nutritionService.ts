@@ -1,4 +1,5 @@
 import { query } from '../../config/db.js';
+import { gamificationService } from '../gamification/gamificationService.js';
 
 export interface CreateFoodDTO {
   name: string;
@@ -72,7 +73,7 @@ export class NutritionService {
       return [];
     }
 
-    if (!searchTerm || searchTerm.trim().isEmpty) {
+    if (!searchTerm || searchTerm.trim().length === 0) {
       // Return top Indonesian staples
       const topRes = await query('SELECT * FROM food_items ORDER BY is_verified DESC, name ASC LIMIT 20');
       return topRes.rows;
@@ -155,13 +156,10 @@ export class NutritionService {
   static async getDailySummary(userId: string, logDate: string) {
     // 1. Get User Nutrition Target
     const targetRes = await query('SELECT * FROM user_nutrition_targets WHERE user_id = $1', [userId]);
-    const target = targetRes.rows[0] || {
-      target_calories: 2000,
-      target_protein_g: 130,
-      target_carbs_g: 220,
-      target_fat_g: 65,
-      target_water_ml: 2500,
-    };
+    const target = targetRes.rows[0];
+    if (!target) {
+      throw { statusCode: 409, code: 'NUTRITION_TARGETS_UNAVAILABLE', message: 'Target nutrisi belum tersedia. Lengkapi profil terlebih dahulu.' };
+    }
 
     // 2. Fetch Meal Logs and their items for that date
     const mealLogsRes = await query(
@@ -304,7 +302,13 @@ export class NutritionService {
     // Update meal_logs updated_at timestamp
     await query('UPDATE meal_logs SET updated_at = NOW() WHERE id = $1', [mealLogId]);
 
-    return itemRes.rows[0];
+    let xpReward = null;
+    try {
+      xpReward = await gamificationService.awardActivityXp(userId, 'meal_logged', mealLogId);
+    } catch {
+      // The food log remains saved if XP storage is temporarily unavailable.
+    }
+    return { ...itemRes.rows[0], xpReward };
   }
 
   static async updateMealItem(userId: string, itemId: string, servingQty: number) {

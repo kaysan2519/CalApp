@@ -2,6 +2,17 @@
 
 Dokumen ini memuat daftar fitur berstatus **PERLU-UJI-LIVE** beserta instruksi langkah demi langkah yang harus dijalankan pada perangkat fisik (smartphone Android/iOS) dan kredensial/layanan yang perlu disediakan.
 
+## 0. Pemeriksaan Lokal Flutter dan Artefak Android
+
+Pemeriksaan lokal terakhir pada 2026-10-12:
+
+1. Jalankan `cd mobile`.
+2. Jalankan `flutter analyze --no-pub`; hasil audit: **No issues found**.
+3. Jalankan `flutter test --no-pub --concurrency=1`; hasil audit: **27/27 tes lulus**.
+4. Jalankan `flutter build apk --debug --no-pub --verbose`; hasil audit: build berhasil.
+5. APK debug tersedia di `mobile/build/app/outputs/flutter-apk/app-debug.apk`.
+6. Instal APK pada emulator/perangkat dan lanjutkan uji live di bawah. Build dan widget tests tidak menggantikan verifikasi alur API end-to-end di perangkat.
+
 ---
 
 ## 1. F03: Pemindai Barcode Kamera Fisik (Open Food Facts)
@@ -24,16 +35,37 @@ Dokumen ini memuat daftar fitur berstatus **PERLU-UJI-LIVE** beserta instruksi l
 ## 2. F02: Foto Makanan AI Vision (Phase 5)
 
 ### Kebutuhan:
-- API Key provider AI yang aktif di backend `.env` (salah satu dari: `GEMINI_API_KEY`, `OPENAI_API_KEY`, atau `ANTHROPIC_API_KEY`).
+- `OPENAI_API_KEY` yang aktif di `backend/.env` dan `AI_PROVIDER=openai` (`OPENAI_MODEL` opsional, default `gpt-4o-mini`). Provider produksi yang diimplementasikan saat ini adalah OpenAI.
 - Kamera perangkat atau foto makanan di galeri foto perangkat.
 
 ### Langkah Uji di Perangkat:
-1. Isi salah satu kunci API di `backend/.env`.
+1. Isi `OPENAI_API_KEY` di `backend/.env`, nyalakan backend, dan jangan menaruh key di Flutter.
 2. Buka tab **Nutrisi** -> ketuk **Foto Makanan (AI)**.
 3. Ambil foto piring makanan nyata (misal: sepiring nasi dengan ayam dan tempe).
 4. Pastikan aplikasi menampilkan draf kandidat makanan dengan label "Estimasi AI", perkiraan porsi, dan tingkat keyakinan (confidence score).
 5. Edit salah satu porsi dan simpan ke catatan makanan harian.
 6. Coba ambil foto benda bukan makanan (misal: meja atau buku): pastikan AI mendeteksi non-makanan dengan aman dan menawarkan opsi input manual.
+
+## 5. Autentikasi, onboarding, sesi dan edit profil
+
+### Kebutuhan:
+- Backend dan PostgreSQL berjalan dengan skema terbaru (`npm run migrate`).
+- Emulator Android; perangkat fisik menggunakan alamat LAN backend lewat `--dart-define=API_BASE_URL=http://<alamat-lan>:4000/api/v1`.
+
+### Langkah Uji:
+1. Buat akun dengan umur 18–120 tahun, tinggi dan berat yang diisi sendiri. Pastikan validasi menolak nilai di luar batas dan tidak ada angka contoh yang dipakai.
+2. Selesaikan langkah tujuan, aktivitas, latihan, peralatan, preferensi makanan, alergi, pantangan dan batasan (kolom opsional boleh kosong).
+3. Pastikan layar rekomendasi memberi status yang jelas bila OpenAI belum dikonfigurasi; target nutrisi berasal dari kalkulasi backend.
+4. Tutup dan buka ulang aplikasi. Pastikan akun yang telah menyelesaikan onboarding menuju dashboard.
+5. Buka Profil, edit data dasar dan preferensi, simpan, lalu muat ulang profil. Pastikan data dan target hasil hitung tersimpan.
+6. Login lagi dengan akun yang sama dan uji logout. Uji refresh token dengan sesi yang telah kedaluwarsa; sesi valid harus diperbarui, sesi tak valid harus meminta login kembali.
+
+## 6. XP, rank dan leaderboard
+
+1. Catat meal atau selesaikan latihan yang memiliki set tercatat. Pastikan XP tetap berasal dari event server dan aktivitas yang sama tidak dibayar dua kali.
+2. Buka Rank dari dashboard. Pastikan total XP, level, rank, progres, riwayat dan daftar peringkat cocok dengan data backend.
+3. Uji leaderboard mingguan dan global, termasuk akun tanpa XP; posisi kosong harus dijelaskan tanpa pengguna contoh.
+4. Kirim permintaan XP dengan `xpAmount` buatan dan aktivitas milik akun lain. Server harus mengabaikan nilai XP klien dan menolak aktivitas asing/tidak tercatat.
 
 ---
 

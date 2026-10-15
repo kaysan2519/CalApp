@@ -27,7 +27,7 @@ class CommunityRepository {
       '/community/groups',
       data: {
         'name': name,
-        if (description != null) 'description': description,
+        'description': ?description,
         'isPrivate': isPrivate,
       },
     );
@@ -46,7 +46,7 @@ class CommunityRepository {
     final res = await apiClient.get(
       '/community/posts',
       queryParameters: {
-        if (groupId != null) 'groupId': groupId,
+        'groupId': ?groupId,
         'limit': limit,
         'offset': offset,
       },
@@ -65,7 +65,7 @@ class CommunityRepository {
       '/community/posts',
       data: {
         'content': content,
-        if (groupId != null) 'groupId': groupId,
+        'groupId': ?groupId,
         'postType': postType,
         'metadata': metadata ?? {},
       },
@@ -104,8 +104,8 @@ class CommunityRepository {
       '/community/report',
       data: {
         'reason': reason,
-        if (targetPostId != null) 'targetPostId': targetPostId,
-        if (targetUserId != null) 'targetUserId': targetUserId,
+        'targetPostId': ?targetPostId,
+        'targetUserId': ?targetUserId,
       },
     );
     return res.data['data'] as Map<String, dynamic>;

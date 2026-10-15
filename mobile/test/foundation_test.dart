@@ -1,33 +1,59 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cal/main.dart';
 import 'package:cal/core/offline/offline_queue.dart';
 import 'package:cal/core/network/api_client.dart';
 import 'package:cal/core/storage/token_storage.dart';
+import 'test_support.dart';
+
+const _secureStorageChannel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
+final _secureStorageValues = <String, String>{};
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    _secureStorageValues.clear();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(_secureStorageChannel, (call) async {
+      final arguments = Map<Object?, Object?>.from(call.arguments as Map);
+      final key = arguments['key'] as String;
+      switch (call.method) {
+        case 'write':
+          _secureStorageValues[key] = arguments['value'] as String;
+          return null;
+        case 'read':
+          return _secureStorageValues[key];
+        case 'delete':
+          _secureStorageValues.remove(key);
+          return null;
+        default:
+          throw MissingPluginException('Unsupported secure storage method: ${call.method}');
+      }
+    });
+  });
+
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(_secureStorageChannel, null);
   });
 
   group('F00 Foundation Tests', () {
-    testWidgets('CalApp renders dashboard and 4 bottom navigation tabs', (tester) async {
+    testWidgets('CalApp routes a signed-out user to the welcome screen', (tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: CalApp(),
+        ProviderScope(
+          overrides: loggedOutAppOverrides(),
+          child: const CalApp(),
         ),
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Cal'), findsOneWidget);
-      expect(find.text('Target Hari Ini'), findsOneWidget);
-      expect(find.text('Hari Ini'), findsOneWidget);
-      expect(find.text('Nutrisi'), findsOneWidget);
-      expect(find.text('Latihan'), findsOneWidget);
-      expect(find.text('Komunitas'), findsOneWidget);
+      expect(find.text('Progress yang terasa milikmu.'), findsOneWidget);
+      expect(find.text('Buat akun'), findsOneWidget);
+      expect(find.text('Saya sudah punya akun'), findsOneWidget);
     });
 
     test('TokenStorage saves, reads, and clears auth tokens correctly', () async {

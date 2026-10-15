@@ -1,10 +1,13 @@
 import { query } from '../../config/db.js';
+import { ProfileRecommendations } from './providers/aiProvider.js';
 import { AIProviderFactory } from './providers/aiProvider.js';
 import { normalizeUnitToGrams } from './unitConversion.js';
 import { NutritionService } from '../nutrition/nutritionService.js';
 
 export class AIService {
-  private static provider = AIProviderFactory.getProvider();
+  private static get provider() {
+    return AIProviderFactory.getProvider();
+  }
 
   static async analyzeFoodVision(base64Image: string) {
     const rawResult = await this.provider.analyzeFoodImage(base64Image);
@@ -30,24 +33,14 @@ export class AIService {
 
       const dbFood = searchRes.rows[0];
       const grams = item.estimatedGrams;
-      let calories = 0;
-      let proteinG = 0;
-      let carbsG = 0;
-      let fatG = 0;
-
-      if (dbFood) {
-        const ratio = grams / parseFloat(dbFood.serving_size);
-        calories = Math.round(parseFloat(dbFood.calories) * ratio);
-        proteinG = parseFloat((parseFloat(dbFood.protein_g) * ratio).toFixed(1));
-        carbsG = parseFloat((parseFloat(dbFood.carbs_g) * ratio).toFixed(1));
-        fatG = parseFloat((parseFloat(dbFood.fat_g) * ratio).toFixed(1));
-      } else {
-        // Fallback default calculation based on 100g = ~150 kcal
-        calories = Math.round((grams / 100) * 150);
-        proteinG = parseFloat(((grams / 100) * 10).toFixed(1));
-        carbsG = parseFloat(((grams / 100) * 18).toFixed(1));
-        fatG = parseFloat(((grams / 100) * 4).toFixed(1));
+      if (!dbFood) {
+        throw { statusCode: 422, code: 'AI_FOOD_NOT_IN_CATALOG', message: `Data nutrisi terverifikasi untuk "${item.label}" belum tersedia. Pilih makanan dari katalog atau masukkan secara manual.` };
       }
+      const ratio = grams / parseFloat(dbFood.serving_size);
+      const calories = Math.round(parseFloat(dbFood.calories) * ratio);
+      const proteinG = parseFloat((parseFloat(dbFood.protein_g) * ratio).toFixed(1));
+      const carbsG = parseFloat((parseFloat(dbFood.carbs_g) * ratio).toFixed(1));
+      const fatG = parseFloat((parseFloat(dbFood.fat_g) * ratio).toFixed(1));
 
       draftItems.push({
         foodItemId: dbFood?.id || null,
@@ -72,7 +65,7 @@ export class AIService {
   }
 
   static async parseFoodText(text: string) {
-    if (!text || text.trim().isEmpty) {
+    if (!text || text.trim().length === 0) {
       throw { statusCode: 422, code: 'EMPTY_TEXT', message: 'Teks makanan tidak boleh kosong.' };
     }
 
@@ -91,24 +84,14 @@ export class AIService {
       );
 
       const dbFood = searchRes.rows[0];
-      let calories = 0;
-      let proteinG = 0;
-      let carbsG = 0;
-      let fatG = 0;
-
-      if (dbFood) {
-        const ratio = normalizedGrams / parseFloat(dbFood.serving_size);
-        calories = Math.round(parseFloat(dbFood.calories) * ratio);
-        proteinG = parseFloat((parseFloat(dbFood.protein_g) * ratio).toFixed(1));
-        carbsG = parseFloat((parseFloat(dbFood.carbs_g) * ratio).toFixed(1));
-        fatG = parseFloat((parseFloat(dbFood.fat_g) * ratio).toFixed(1));
-      } else {
-        // Fallback estimate
-        calories = Math.round((normalizedGrams / 100) * 140);
-        proteinG = parseFloat(((normalizedGrams / 100) * 8).toFixed(1));
-        carbsG = parseFloat(((normalizedGrams / 100) * 18).toFixed(1));
-        fatG = parseFloat(((normalizedGrams / 100) * 4).toFixed(1));
+      if (!dbFood) {
+        throw { statusCode: 422, code: 'AI_FOOD_NOT_IN_CATALOG', message: `Data nutrisi terverifikasi untuk "${entity.foodName}" belum tersedia. Pilih makanan dari katalog atau masukkan secara manual.` };
       }
+      const ratio = normalizedGrams / parseFloat(dbFood.serving_size);
+      const calories = Math.round(parseFloat(dbFood.calories) * ratio);
+      const proteinG = parseFloat((parseFloat(dbFood.protein_g) * ratio).toFixed(1));
+      const carbsG = parseFloat((parseFloat(dbFood.carbs_g) * ratio).toFixed(1));
+      const fatG = parseFloat((parseFloat(dbFood.fat_g) * ratio).toFixed(1));
 
       resolvedItems.push({
         foodItemId: dbFood?.id || null,
@@ -170,5 +153,95 @@ export class AIService {
 
   static async generateWorkout(goal: string, daysPerWeek: number, equipment: string) {
     return await this.provider.generateWorkoutPlan(goal, daysPerWeek, equipment);
+  }
+
+  static async generateProfileRecommendations(userId: string) {
+    const profileResult = await query(
+      `SELECT name, age, gender, height_cm, weight_kg, target_weight_kg, activity_level, goal,
+              training_experience, training_days_per_week, training_schedule, available_equipment,
+              food_preferences, allergies, dietary_restrictions, activity_limitations,
+              onboarding_completed, timezone
+       FROM users WHERE id = $1`,
+      [userId],
+    );
+    const profile = profileResult.rows[0];
+    if (!profile) throw { statusCode: 404, code: 'USER_NOT_FOUND', message: 'Profil pengguna tidak ditemukan.' };
+    if (!profile.onboarding_completed) {
+      throw { statusCode: 409, code: 'ONBOARDING_INCOMPLETE', message: 'Lengkapi profil sebelum membuat rekomendasi.' };
+    }
+
+    const targetResult = await query('SELECT * FROM user_nutrition_targets WHERE user_id = $1', [userId]);
+    const targets = targetResult.rows[0];
+    if (!targets) {
+      throw { statusCode: 409, code: 'NUTRITION_TARGETS_UNAVAILABLE', message: 'Target nutrisi belum tersedia untuk profil ini.' };
+    }
+    const activityResult = await query(
+      `SELECT title, started_at, completed_at, duration_seconds
+       FROM workout_sessions WHERE user_id = $1 AND status = 'completed'
+       ORDER BY completed_at DESC NULLS LAST LIMIT 5`,
+      [userId],
+    );
+    const nutrition = await NutritionService.getDailySummary(userId, this.getLocalDate(profile.timezone));
+
+    const context = {
+      profile: {
+        age: Number(profile.age),
+        gender: profile.gender,
+        heightCm: Number(profile.height_cm),
+        weightKg: Number(profile.weight_kg),
+        targetWeightKg: profile.target_weight_kg == null ? null : Number(profile.target_weight_kg),
+        goal: profile.goal,
+        activityLevel: profile.activity_level,
+        trainingExperience: profile.training_experience,
+        trainingDaysPerWeek: Number(profile.training_days_per_week),
+        trainingSchedule: profile.training_schedule,
+        availableEquipment: profile.available_equipment,
+        foodPreferences: profile.food_preferences,
+        allergies: profile.allergies,
+        dietaryRestrictions: profile.dietary_restrictions,
+        activityLimitations: profile.activity_limitations,
+      },
+      deterministicNutritionTargets: {
+        calories: Number(targets.target_calories),
+        proteinG: Number(targets.target_protein_g),
+        carbsG: Number(targets.target_carbs_g),
+        fatG: Number(targets.target_fat_g),
+        waterMl: Number(targets.target_water_ml),
+      },
+      recordedActivity: activityResult.rows.map(activity => ({
+        title: activity.title,
+        completedAt: activity.completed_at,
+        durationSeconds: activity.duration_seconds,
+      })),
+      todayRecordedNutrition: {
+        consumedCalories: nutrition.consumed.calories,
+        consumedProteinG: nutrition.consumed.proteinG,
+        consumedCarbsG: nutrition.consumed.carbsG,
+        consumedFatG: nutrition.consumed.fatG,
+      },
+    };
+
+    const recommendations: ProfileRecommendations = await this.provider.generateProfileRecommendations(context);
+    return {
+      nutritionTargets: {
+        targetCalories: Number(targets.target_calories),
+        targetProteinG: Number(targets.target_protein_g),
+        targetCarbsG: Number(targets.target_carbs_g),
+        targetFatG: Number(targets.target_fat_g),
+        targetWaterMl: Number(targets.target_water_ml),
+        isManual: targets.is_manual,
+      },
+      recommendations,
+      generatedAt: new Date().toISOString(),
+      notice: 'Target nutrisi dihitung oleh Cal dari data profil. Saran menu dan latihan adalah estimasi AI yang dapat ditinjau dan disesuaikan.',
+    };
+  }
+
+  private static getLocalDate(timezone: string): string {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone || 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).formatToParts(new Date());
+    const part = (type: string) => parts.find(value => value.type === type)?.value ?? '';
+    return `${part('year')}-${part('month')}-${part('day')}`;
   }
 }

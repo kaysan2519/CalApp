@@ -8,7 +8,14 @@ export class InsightController {
       const insights = await insightService.getWeeklyInsights(userId);
       return res.json({ status: 'success', data: insights });
     } catch (error: any) {
-      return res.status(500).json({ status: 'error', message: error.message });
+      const statusCode = error?.statusCode ?? 500;
+      return res.status(statusCode).json({
+        success: false,
+        error: {
+          code: error?.code ?? 'INTERNAL_SERVER_ERROR',
+          message: statusCode === 500 ? 'Terjadi kesalahan pada server.' : error.message,
+        },
+      });
     }
   }
 }

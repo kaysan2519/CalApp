@@ -3,26 +3,28 @@ import { z } from 'zod';
 import { AuthService } from './authService.js';
 
 const registerSchema = z.object({
-  email: z.string().email('Format email tidak valid'),
+  email: z.string().trim().email('Format email tidak valid'),
   password: z.string().min(8, 'Kata sandi minimal 8 karakter'),
-  name: z.string().min(2, 'Nama minimal 2 karakter'),
-  age: z.number().int().min(18, 'Usia minimal 18 tahun untuk menggunakan aplikasi.'),
+  name: z.string().trim().min(2, 'Nama minimal 2 karakter').max(100),
+  age: z.number().int().min(18, 'Usia minimal 18 tahun untuk menggunakan aplikasi.').max(120),
   gender: z.enum(['male', 'female', 'neutral']).optional(),
-  heightCm: z.number().min(100).max(250).optional(),
-  weightKg: z.number().min(30).max(300).optional(),
+  heightCm: z.number().min(100).max(250),
+  weightKg: z.number().min(30).max(300),
   activityLevel: z.enum(['sedentary', 'light', 'moderate', 'heavy', 'very_heavy']).optional(),
-  goal: z.enum(['lose', 'maintain', 'gain']).optional(),
+  goal: z.enum(['lose', 'maintain', 'gain', 'fitness', 'muscle']).optional(),
   timezone: z.string().optional(),
 });
 
 const loginSchema = z.object({
-  email: z.string().email('Format email tidak valid'),
+  email: z.string().trim().email('Format email tidak valid'),
   password: z.string().min(1, 'Kata sandi wajib diisi'),
 });
 
 const refreshSchema = z.object({
   refreshToken: z.string().min(1, 'Refresh token wajib disertakan'),
 });
+
+const logoutSchema = z.object({ refreshToken: z.string().min(1).nullable().optional() });
 
 export class AuthController {
   static async register(req: Request, res: Response, next: NextFunction) {
@@ -69,8 +71,8 @@ export class AuthController {
 
   static async logout(req: Request, res: Response, next: NextFunction) {
     try {
-      const refreshToken = req.body.refreshToken;
-      await AuthService.logout(refreshToken);
+      const { refreshToken } = logoutSchema.parse(req.body ?? {});
+      await AuthService.logout(refreshToken ?? undefined);
       res.json({
         success: true,
         message: 'Logout berhasil.',

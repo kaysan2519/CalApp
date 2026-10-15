@@ -13,13 +13,14 @@ export class PlannerService {
         plan_date DATE NOT NULL,
         planned_meals JSONB DEFAULT '[]',
         workout_routine_id UUID REFERENCES workout_routines(id) ON DELETE SET NULL,
-        water_target_ml INTEGER DEFAULT 2500,
+        water_target_ml INTEGER,
         notes TEXT,
         is_completed BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMPTZ DEFAULT NOW(),
         UNIQUE(user_id, plan_date)
       );
       CREATE INDEX IF NOT EXISTS idx_daily_plans_user_date ON daily_plans(user_id, plan_date);
+      ALTER TABLE daily_plans ALTER COLUMN water_target_ml DROP DEFAULT;
     `);
     this.isInitialized = true;
   }
@@ -31,12 +32,16 @@ export class PlannerService {
    */
   static async generateDailyMealPlan(userId: string, date?: string, customTargetCalories?: number) {
     const planDate = date || new Date().toISOString().split('T')[0];
+    const profile = (await query('SELECT gender FROM users WHERE id = $1', [userId])).rows[0];
+    if (!profile) {
+      throw { statusCode: 404, code: 'USER_NOT_FOUND', message: 'Pengguna tidak ditemukan.' };
+    }
+    const minimumCalories = profile.gender === 'female' ? 1200 : 1500;
 
     // Ambil target nutrisi pengguna
-    let targetCalories = customTargetCalories;
-    if (!targetCalories) {
-      const summary = await NutritionService.getDailySummary(userId, planDate);
-      targetCalories = summary.target.calories;
+    const targetCalories = customTargetCalories ?? (await NutritionService.getDailySummary(userId, planDate)).target.calories;
+    if (targetCalories < minimumCalories) {
+      throw { statusCode: 422, code: 'UNSAFE_CALORIE_TARGET', message: `Target menu minimal ${minimumCalories} kkal untuk profil ini.` };
     }
 
     // Ambil resep dari DB
@@ -186,6 +191,7 @@ export class PlannerService {
       [userId]
     );
     const plannedRoutine = routineRes.rows[0] || null;
+    const waterTargetMl = savedPlan?.water_target_ml ?? nutritionSummary.target.waterMl;
 
     return {
       date,
@@ -202,9 +208,9 @@ export class PlannerService {
         isCompleted: savedPlan?.is_completed || false,
       } : null,
       hydration: {
-        targetMl: savedPlan?.water_target_ml || nutritionSummary.target.waterMl || 2500,
+        targetMl: waterTargetMl,
         consumedMl: nutritionSummary.consumed.waterMl,
-        isTargetMet: nutritionSummary.consumed.waterMl >= (savedPlan?.water_target_ml || 2500),
+        isTargetMet: nutritionSummary.consumed.waterMl >= waterTargetMl,
       },
       notes: savedPlan?.notes || null,
       isCompleted: savedPlan?.is_completed || false,
@@ -219,6 +225,18 @@ export class PlannerService {
     isCompleted?: boolean;
   }) {
     await this.ensureTable();
+
+    let waterTargetMl = data.waterTargetMl;
+    if (waterTargetMl === undefined) {
+      const target = (await query('SELECT target_water_ml FROM user_nutrition_targets WHERE user_id = $1', [userId])).rows[0];
+      if (!target) {
+        throw { statusCode: 409, code: 'NUTRITION_TARGETS_NOT_SET', message: 'Target nutrisi belum tersedia untuk profil ini.' };
+      }
+      waterTargetMl = Number(target.target_water_ml);
+    }
+    if (!Number.isInteger(waterTargetMl) || waterTargetMl < 1000 || waterTargetMl > 10000) {
+      throw { statusCode: 422, code: 'INVALID_WATER_TARGET', message: 'Target air harus antara 1000 dan 10000 ml.' };
+    }
 
     const sql = `
       INSERT INTO daily_plans (user_id, plan_date, planned_meals, workout_routine_id, water_target_ml, notes, is_completed)
@@ -238,7 +256,7 @@ export class PlannerService {
       date,
       JSON.stringify(data.plannedMeals || []),
       data.workoutRoutineId || null,
-      data.waterTargetMl || 2500,
+      waterTargetMl,
       data.notes || null,
       data.isCompleted || false,
     ]);

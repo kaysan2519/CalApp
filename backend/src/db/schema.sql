@@ -12,15 +12,39 @@ CREATE TABLE IF NOT EXISTS users (
     gender VARCHAR(20) DEFAULT 'neutral',
     height_cm NUMERIC(5,2),
     weight_kg NUMERIC(5,2),
+    target_weight_kg NUMERIC(5,2),
     activity_level VARCHAR(30) DEFAULT 'sedentary',
     goal VARCHAR(30) DEFAULT 'maintain',
+    training_experience VARCHAR(30) NOT NULL DEFAULT 'beginner',
+    training_days_per_week INTEGER NOT NULL DEFAULT 3 CHECK (training_days_per_week BETWEEN 1 AND 7),
+    training_schedule JSONB NOT NULL DEFAULT '[]',
+    available_equipment TEXT[] NOT NULL DEFAULT '{}',
+    food_preferences TEXT[] NOT NULL DEFAULT '{}',
+    allergies TEXT[] NOT NULL DEFAULT '{}',
+    dietary_restrictions TEXT[] NOT NULL DEFAULT '{}',
+    activity_limitations TEXT,
+    onboarding_completed BOOLEAN NOT NULL DEFAULT FALSE,
+    onboarding_completed_at TIMESTAMPTZ,
     timezone VARCHAR(50) DEFAULT 'Asia/Jakarta',
     notification_preferences JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_lower ON users (LOWER(email));
+
 ALTER TABLE users ADD COLUMN IF NOT EXISTS notification_preferences JSONB DEFAULT '{}';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS target_weight_kg NUMERIC(5,2);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS training_experience VARCHAR(30) NOT NULL DEFAULT 'beginner';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS training_days_per_week INTEGER NOT NULL DEFAULT 3;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS training_schedule JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS available_equipment TEXT[] NOT NULL DEFAULT '{}';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS food_preferences TEXT[] NOT NULL DEFAULT '{}';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS allergies TEXT[] NOT NULL DEFAULT '{}';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS dietary_restrictions TEXT[] NOT NULL DEFAULT '{}';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS activity_limitations TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarding_completed BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarding_completed_at TIMESTAMPTZ;
 
 -- 2. User Nutrition Targets
 CREATE TABLE IF NOT EXISTS user_nutrition_targets (
@@ -29,10 +53,12 @@ CREATE TABLE IF NOT EXISTS user_nutrition_targets (
     target_protein_g NUMERIC(6,2) NOT NULL,
     target_carbs_g NUMERIC(6,2) NOT NULL,
     target_fat_g NUMERIC(6,2) NOT NULL,
-    target_water_ml INTEGER NOT NULL DEFAULT 2000,
+    target_water_ml INTEGER NOT NULL,
     is_manual BOOLEAN DEFAULT FALSE,
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE user_nutrition_targets ALTER COLUMN target_water_ml DROP DEFAULT;
 
 -- 3. Refresh Tokens
 CREATE TABLE IF NOT EXISTS refresh_tokens (

@@ -185,13 +185,13 @@ class DailyMenuPlan {
     final rawMeals = json['meals'] as List? ?? [];
     return DailyMenuPlan(
       date: json['date'] as String? ?? '',
-      targetCalories: (json['targetCalories'] as num?)?.toInt() ?? 2000,
+      targetCalories: (json['targetCalories'] as num).toInt(),
       totalPlannedCalories: (json['totalPlannedCalories'] as num?)?.toDouble() ?? 0.0,
       totalPlannedProtein: (json['totalPlannedProtein'] as num?)?.toDouble() ?? 0.0,
       totalPlannedCarbs: (json['totalPlannedCarbs'] as num?)?.toDouble() ?? 0.0,
       totalPlannedFat: (json['totalPlannedFat'] as num?)?.toDouble() ?? 0.0,
       variancePercent: (json['variancePercent'] as num?)?.toDouble() ?? 0.0,
-      isWithinSafetyBounds: json['isWithinSafetyBounds'] as bool? ?? true,
+      isWithinSafetyBounds: json['isWithinSafetyBounds'] as bool,
       meals: rawMeals.map((e) => PlannedMealItem.fromJson(e as Map<String, dynamic>)).toList(),
       notice: json['notice'] as String? ?? '',
     );

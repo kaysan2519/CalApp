@@ -90,7 +90,13 @@ export class RecipeService {
     };
   }
 
-  static async logRecipeToMeal(userId: string, recipeId: string, mealType: string, servings: number = 1, logDate?: string) {
+  static async logRecipeToMeal(
+    userId: string,
+    recipeId: string,
+    mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack',
+    servings: number = 1,
+    logDate?: string,
+  ) {
     const date = logDate || new Date().toISOString().split('T')[0];
     const recipe = await this.getRecipeById(recipeId, servings);
 

@@ -70,6 +70,12 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<User?>> {
     state = const AsyncValue.data(null);
   }
 
+  Future<User> updateProfile(Map<String, dynamic> updates) async {
+    final user = await _repository.updateProfile(updates);
+    state = AsyncValue.data(user);
+    return user;
+  }
+
   Future<void> deleteAccount() async {
     await _repository.deleteAccount();
     state = const AsyncValue.data(null);

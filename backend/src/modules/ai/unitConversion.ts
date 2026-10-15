@@ -34,9 +34,9 @@ export function normalizeUnitToGrams(rawUnit: string, quantity: number): { norma
     }
   }
 
-  // Default fallback if unlisted: assume 100g per portion
-  return {
-    normalizedGrams: Math.round(quantity * 100),
-    standardUnit: 'porsi',
+  throw {
+    statusCode: 422,
+    code: 'UNSUPPORTED_FOOD_UNIT',
+    message: 'Satuan tersebut belum memiliki konversi gram yang terverifikasi. Sebutkan jumlah dalam gram atau satuan rumah tangga yang tersedia.',
   };
 }

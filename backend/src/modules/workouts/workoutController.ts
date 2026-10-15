@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { WorkoutService } from './workoutService.js';
+import { routeParam } from '../../middleware/routeParam.js';
 
 const startSessionSchema = z.object({
   title: z.string().min(2, 'Judul sesi minimal 2 karakter'),
@@ -55,7 +56,7 @@ export class WorkoutController {
 
   static async getExerciseById(req: Request, res: Response, next: NextFunction) {
     try {
-      const exercise = await WorkoutService.getExerciseById(req.params.id);
+      const exercise = await WorkoutService.getExerciseById(routeParam(req.params, 'id'));
       res.json({ success: true, data: exercise });
     } catch (err) {
       next(err);
@@ -84,7 +85,7 @@ export class WorkoutController {
 
   static async getRoutineById(req: Request, res: Response, next: NextFunction) {
     try {
-      const routine = await WorkoutService.getRoutineById(req.user!.id, req.params.id);
+      const routine = await WorkoutService.getRoutineById(req.user!.id, routeParam(req.params, 'id'));
       res.json({ success: true, data: routine });
     } catch (err) {
       next(err);
@@ -104,7 +105,7 @@ export class WorkoutController {
 
   static async logSet(req: Request, res: Response, next: NextFunction) {
     try {
-      const { sessionId } = req.params;
+      const sessionId = routeParam(req.params, 'sessionId');
       const validated = logSetSchema.parse(req.body);
       const result = await WorkoutService.logSet(req.user!.id, sessionId, validated);
       res.status(201).json({ success: true, data: result });
@@ -115,7 +116,7 @@ export class WorkoutController {
 
   static async finishSession(req: Request, res: Response, next: NextFunction) {
     try {
-      const { sessionId } = req.params;
+      const sessionId = routeParam(req.params, 'sessionId');
       const validated = finishSessionSchema.parse(req.body);
       const session = await WorkoutService.finishSession(req.user!.id, sessionId, validated.notes);
       res.json({ success: true, data: session });

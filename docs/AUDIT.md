@@ -5,6 +5,8 @@ Auditor: Antigravity Agent
 Operating System: Windows 11 (build 26200.9457)
 Repository: `c:\Users\Kaysan\CalApp` (remote: `https://github.com/kaysan2519/CalApp.git`)
 
+> This is a historical Phase 1 baseline. Its initial repository and tool observations are not current; see `docs/PROGRESS.md` for verification from the latest audit.
+
 ---
 
 ## 1. Skill & Subagent Discovery
@@ -39,12 +41,9 @@ Repository: `c:\Users\Kaysan\CalApp` (remote: `https://github.com/kaysan2519/Cal
 
 ## 3. Environment Variables (API Keys)
 
-Checked presence only (without printing values):
-- `ANTHROPIC_API_KEY`: **Tidak ada (False)**
-- `OPENAI_API_KEY`: **Tidak ada (False)**
-- `GEMINI_API_KEY`: **Tidak ada (False)**
+The latest audit checked presence only (without printing values): `OPENAI_API_KEY` is not set in the backend `.env` or process environment.
 
-*Catatan:* Sesuai Bagian 8, provider AI akan diimplementasikan di balik abstraction interface (`VisionProvider`, `TextProvider`) dengan FakeProvider/MockProvider untuk automated testing dan live integration akan berstatus `PERLU-UJI-LIVE` sampai pengguna menyediakan API key via `.env`.
+*Catatan:* Provider produksi yang saat ini tersedia adalah OpenAI; automated tests memakai `MockAIProvider`. Live integration remains `PERLU-UJI-LIVE` until the user provides the key in the backend `.env`.
 
 ---
 

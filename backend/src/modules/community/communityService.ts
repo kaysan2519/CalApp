@@ -113,13 +113,7 @@ export class CommunityService {
 
       // Award +15 XP for community sharing (idempotent with post ID)
       try {
-        await gamificationService.awardXp(
-          userId,
-          'community_post',
-          15,
-          `post_${post.id}`,
-          { postId: post.id }
-        );
+        await gamificationService.awardActivityXp(userId, 'community_post', post.id);
       } catch (_) {
         // Non-blocking for post creation
       }

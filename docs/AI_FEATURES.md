@@ -68,13 +68,16 @@ This document standardizes the specifications, schemas, uncertainty handling, sa
 
 ## 3. Provider Abstraction Architecture
 
+Production provider currently implemented: **OpenAI**. `MockAIProvider` is selected only in automated tests; production with no `OPENAI_API_KEY` returns an explicit `AI_NOT_CONFIGURED` error. Provider failures are not replaced with simulated results.
+
 ```mermaid
 flowchart TD
     Client[Flutter Client] -->|API Request| BackendController[Express Controller]
     BackendController --> Validator[Zod Schema Validator]
     Validator --> AIInterface[AI Provider Interface]
-    AIInterface -->|If Key Present| LiveProvider[Gemini / OpenAI / Anthropic Provider]
-    AIInterface -->|If Key Missing / Testing| MockProvider[Deterministic Mock Provider]
+    AIInterface -->|OPENAI_API_KEY configured| LiveProvider[OpenAI Provider]
+    AIInterface -->|NODE_ENV=test only| MockProvider[Test-only Mock Provider]
+    AIInterface -->|Production key missing| Unavailable[AI_NOT_CONFIGURED]
     LiveProvider --> DBResolver[DB Catalog & Unit Resolver]
     MockProvider --> DBResolver
     DBResolver --> Response[Verified JSON Response]

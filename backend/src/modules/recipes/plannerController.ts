@@ -11,7 +11,7 @@ const savePlanSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format tanggal harus YYYY-MM-DD'),
   plannedMeals: z.array(z.any()).optional(),
   workoutRoutineId: z.string().uuid().optional(),
-  waterTargetMl: z.number().int().positive().optional(),
+  waterTargetMl: z.number().int().min(1000).max(10000).optional(),
   notes: z.string().optional(),
   isCompleted: z.boolean().optional(),
 });

@@ -57,7 +57,7 @@ class FakeGamificationRepository extends GamificationRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> getLeaderboard({int limit = 50}) async {
+  Future<Map<String, dynamic>> getLeaderboard({int limit = 50, String period = 'weekly'}) async {
     return {
       'leaderboard': [
         LeaderboardItem(userId: 'u-1', displayName: 'Budi Santoso', weekXp: 450, currentLevel: 3, rank: 1),

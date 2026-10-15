@@ -43,7 +43,7 @@ Standard Error Codes:
 ## 2. Core Endpoint Summary
 
 ### Auth & Account (`/auth`)
-- `POST /auth/register` — Register user (email, password, name, age >= 18).
+- `POST /auth/register` — Register user (email, password, name, age 18–120, heightCm, weightKg; demographic data has no client defaults).
 - `POST /auth/login` — Authenticate user, returns short-lived accessToken (15m) + refreshToken (7d).
 - `POST /auth/refresh` — Rotate refresh token, returns new pair.
 - `POST /auth/logout` — Revoke refresh token.
@@ -52,7 +52,7 @@ Standard Error Codes:
 
 ### Profile & Nutrition Target (`/profile`)
 - `GET /profile` — Fetch current user profile.
-- `PUT /profile` — Update demographics & recalculate Mifflin-St Jeor targets.
+- `PUT /profile` — Update demographics, onboarding preferences, and `onboardingCompleted`; recalculate Mifflin-St Jeor targets unless manually overridden. Optional fields include `targetWeightKg`, `trainingExperience`, `trainingDaysPerWeek`, `trainingSchedule`, `availableEquipment`, `foodPreferences`, `allergies`, `dietaryRestrictions`, and `activityLimitations`.
 - `GET /profile/targets` — Get current nutrition targets (calories, protein, carbs, fat, water).
 - `PUT /profile/targets` — Override targets manually.
 
@@ -71,6 +71,7 @@ Standard Error Codes:
 - `POST /ai/food-text` — Natural language text parser (e.g. "nasi 2 centong dan ayam bakar 150g").
 - `POST /ai/coach/chat` — Context-aware AI coach query with server-side authorized tool execution.
 - `POST /ai/workout-generator` — Generate customized workout routine based on equipment and split.
+- `POST /ai/profile-recommendations` — Generate profile- and activity-context recommendations; calorie and macro targets are calculated by backend code and included with the AI response.
 
 ### Recipes & Meal Planner (`/recipes`)
 - `GET /recipes` — Search Indonesian healthy recipes by tag, prep time, or calorie range.
@@ -88,8 +89,9 @@ Standard Error Codes:
 - `GET /workouts/history` — Workout session history and PR log.
 
 ### Gamification & Community (`/gamification`, `/community`)
-- `GET /gamification/status` — Current XP, level, active streak, and next level threshold.
-- `GET /gamification/leaderboard?period=weekly` — XP leaderboard with tie-break handling.
+- `GET /gamification/profile` — Current XP, level progress, current rank, rank thresholds, daily cap and XP history.
+- `GET /gamification/leaderboard?period=weekly|global` — XP leaderboard, current user's position and rank gap when available.
+- `POST /gamification/award-xp` — Request a fixed server-verified reward using `{ "eventCode": "meal_logged|workout_completed|community_post", "activityId": "<record id>" }`. Client XP amounts are ignored; the referenced activity must exist and belong to the authenticated user.
 - `GET /gamification/achievements` — Unlocked and locked achievements.
 - `GET /community/feed` — Group or public activity feed.
 - `POST /community/posts` — Share workout milestone or achievement.

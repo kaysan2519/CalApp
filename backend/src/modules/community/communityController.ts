@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { communityService } from './communityService.js';
+import { routeParam } from '../../middleware/routeParam.js';
 
 export class CommunityController {
   // Groups
@@ -31,7 +32,7 @@ export class CommunityController {
   async joinGroup(req: Request, res: Response) {
     try {
       const userId = req.user!.id;
-      const { id: groupId } = req.params;
+      const groupId = routeParam(req.params, 'id');
       const member = await communityService.joinGroup(userId, groupId);
       return res.json({ status: 'success', data: member });
     } catch (error: any) {
@@ -42,7 +43,7 @@ export class CommunityController {
   async leaveGroup(req: Request, res: Response) {
     try {
       const userId = req.user!.id;
-      const { id: groupId } = req.params;
+      const groupId = routeParam(req.params, 'id');
       const result = await communityService.leaveGroup(userId, groupId);
       return res.json({ status: 'success', data: result });
     } catch (error: any) {
@@ -90,7 +91,7 @@ export class CommunityController {
   async toggleReaction(req: Request, res: Response) {
     try {
       const userId = req.user!.id;
-      const { id: postId } = req.params;
+      const postId = routeParam(req.params, 'id');
       const { reactionType } = req.body;
 
       const result = await communityService.toggleReaction(userId, postId, reactionType || 'kudos');
@@ -104,7 +105,7 @@ export class CommunityController {
   async addComment(req: Request, res: Response) {
     try {
       const userId = req.user!.id;
-      const { id: postId } = req.params;
+      const postId = routeParam(req.params, 'id');
       const { content } = req.body;
 
       if (!content) {
@@ -120,7 +121,7 @@ export class CommunityController {
 
   async listComments(req: Request, res: Response) {
     try {
-      const { id: postId } = req.params;
+      const postId = routeParam(req.params, 'id');
       const comments = await communityService.listComments(postId);
       return res.json({ status: 'success', data: comments });
     } catch (error: any) {

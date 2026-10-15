@@ -76,6 +76,15 @@ describe('Phase 3 - Auth, Profile & Persistence Integration (Real PostgreSQL)', 
     expect(res.body.data.refreshToken).toBeDefined();
   });
 
+  it('rejects duplicate email regardless of letter casing', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/register')
+      .send({ ...testUser, email: testUser.email.toUpperCase() });
+
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('EMAIL_ALREADY_EXISTS');
+  });
+
   it('rejects login with wrong password', async () => {
     const res = await request(app)
       .post('/api/v1/auth/login')
@@ -123,17 +132,37 @@ describe('Phase 3 - Auth, Profile & Persistence Integration (Real PostgreSQL)', 
     expect(res.body.data.nutritionTargets.target_calories).toBeDefined();
   });
 
+  it('rejects private profile access without a valid token', async () => {
+    const res = await request(app).get('/api/v1/profile');
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe('UNAUTHORIZED');
+  });
+
   it('updates demographics and recalculates nutrition targets automatically', async () => {
     const res = await request(app)
       .put('/api/v1/profile')
       .set('Authorization', `Bearer ${accessToken}`)
       .send({
         weightKg: 80,
+        targetWeightKg: 68,
+        trainingExperience: 'intermediate',
+        trainingDaysPerWeek: 4,
+        trainingSchedule: ['monday', 'thursday'],
+        availableEquipment: ['Dumbbell'],
+        foodPreferences: ['vegetarian'],
+        allergies: ['peanut'],
+        dietaryRestrictions: ['halal'],
+        activityLimitations: 'Avoid high impact',
+        onboardingCompleted: true,
       });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data.user.weight_kg).toBe('80.00');
+    expect(res.body.data.user.target_weight_kg).toBe('68.00');
+    expect(res.body.data.user.training_schedule).toEqual(['monday', 'thursday']);
+    expect(res.body.data.user.food_preferences).toEqual(['vegetarian']);
+    expect(res.body.data.user.onboarding_completed).toBe(true);
     // More weight = higher calories & protein
     expect(res.body.data.nutritionTargets.target_protein_g).toBe('144.00'); // 80 * 1.8
   });
@@ -152,6 +181,22 @@ describe('Phase 3 - Auth, Profile & Persistence Integration (Real PostgreSQL)', 
 
     expect(res.status).toBe(422);
     expect(res.body.success).toBe(false);
+  });
+
+  it('enforces the 1500 kcal floor for male profiles', async () => {
+    const res = await request(app)
+      .put('/api/v1/profile/targets')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        targetCalories: 1200,
+        targetProteinG: 100,
+        targetCarbsG: 120,
+        targetFatG: 40,
+        targetWaterMl: 2000,
+      });
+
+    expect(res.status).toBe(422);
+    expect(res.body.error.message).toContain('1500 kkal');
   });
 
   it('allows safe manual target override', async () => {

@@ -50,11 +50,11 @@ This log records default decisions, options evaluated, chosen paths, reasons, an
 ---
 
 ## 6. AI Provider Interface & Fallback Strategy
-- **Context:** No production AI API keys are configured in local environment variables.
-- **Options:** Block until key provided vs build behind interface with Fake/Mock provider for dev/testing.
-- **Decision:** Clean abstraction interface (`VisionProvider`, `TextProvider`) with full input/output JSON schema validation. Automated tests use structured mock responses; live calls require `GEMINI_API_KEY`, `OPENAI_API_KEY`, or `ANTHROPIC_API_KEY` in server `.env` and are tagged `PERLU-UJI-LIVE`.
-- **Reason:** Decoupled architecture, zero hardcoded credentials, testable in CI/local offline.
-- **Impact if changed:** Any provider can be plugged in without changing domain logic.
+- **Context:** No production AI API key is configured in the local environment.
+- **Options:** Block until a key is provided vs build behind an interface with a test-only mock.
+- **Decision:** Production uses the configured OpenAI provider only. `MockAIProvider` is selected only under `NODE_ENV=test`; missing/unsupported configuration returns `AI_NOT_CONFIGURED`, without simulated production output. Inputs and structured outputs are validated.
+- **Reason:** Keeps credentials server-side and prevents a fake response from being presented as live AI.
+- **Impact if changed:** Add and test an explicit provider implementation before exposing it as a supported environment option.
 
 ---
 
@@ -181,6 +181,32 @@ This log records default decisions, options evaluated, chosen paths, reasons, an
 - **Decision:** All metrics (average calories, delta percentage, protein adherence %, and volume load) are computed via strict SQL aggregation over `meal_logs`, `meal_log_items`, and `workout_sessions`. The system **strictly distinguishes between "no data logged" (`daysLogged = 0`, `hasData = false`) and "zero values logged"**. Narratives are generated via verifiable mathematical thresholds, ensuring recommendations are 100% truthful, safe, and reproducible.
 - **Reason:** Adheres to Section 3 rule ("Numbers calculated in code, not LLM"). Eliminates hallucinated calorie reports, guarantees instant latency, and provides transparent coaching feedback.
 - **Impact if changed:** Fundamental data integrity principle for user trust and safety.
+
+---
+
+## 21. Persistent Onboarding and Reusable Profile Editor
+- **Context:** Onboarding preferences need to survive restarts and remain editable.
+- **Decision:** Store onboarding completion and preferences on the authenticated `users` record; recalculate deterministic nutrition targets in the backend when demographics or goals change. Reuse the step-based onboarding form for an authenticated profile edit route.
+- **Reason:** One validation path keeps first-time setup and later profile changes consistent.
+- **Impact if changed:** API and route guards must preserve onboarding state and avoid redirect loops.
+
+## 22. Server-Verified Activity XP and Rank Thresholds
+- **Context:** Client-supplied XP amounts could be manipulated and duplicate activities could be rewarded repeatedly.
+- **Decision:** Award fixed event values only after the server verifies ownership and recorded activity; use idempotency and a daily cap. Rank tiers are derived from total XP, and leaderboard values come from XP history.
+- **Reason:** Keeps activity rewards auditable and leaderboard rankings tied to recorded events.
+- **Impact if changed:** Existing event identities, daily cap rules, rank thresholds and leaderboard contracts require coordinated migration.
+
+## 23. Audit Evidence and Verification Status
+- **Context:** Earlier progress notes described broad verification that this audit could not reproduce.
+- **Decision:** `docs/PROGRESS.md` records only commands and outcomes observed during the current audit; live OpenAI and Flutter UI/build checks remain explicitly pending.
+- **Reason:** A passing backend suite does not prove live provider behavior or mobile runtime behavior.
+- **Impact if changed:** Update the tracker only after collecting new command output or device evidence.
+
+## 24. Flutter Secure Storage Android SDK Compatibility
+- **Context:** The installed `flutter_secure_storage` 9.2.4 Android plugin required an Android compile SDK that was not installed, preventing the app build.
+- **Decision:** Upgrade to `flutter_secure_storage` 10.3.4 and update `pubspec.lock`. The v10 release line supports the installed Android toolchain and includes migration support for data stored by v9.
+- **Reason:** Restore a reproducible Android build while preserving the plugin's supported upgrade path for existing secure-storage data.
+- **Impact if changed:** Recheck compile SDK compatibility and secure-storage migration behavior before selecting another major version.
 
 
 

@@ -23,6 +23,7 @@ class ActiveWorkoutSessionSheet extends ConsumerStatefulWidget {
     final repo = ProviderScope.containerOf(context).read(workoutRepositoryProvider);
     final session = await repo.startSession(title: title, routineId: routineId);
     final exercises = await repo.getExercises();
+    if (!context.mounted) return null;
     return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -279,7 +280,7 @@ class _ActiveWorkoutSessionSheetState extends ConsumerState<ActiveWorkoutSession
 
             // Exercise Dropdown
             DropdownButtonFormField<String>(
-              value: _selectedExercise.id,
+              initialValue: _selectedExercise.id,
               decoration: InputDecoration(
                 labelText: 'Pilih Latihan',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -349,7 +350,7 @@ class _ActiveWorkoutSessionSheetState extends ConsumerState<ActiveWorkoutSession
                     )
                   : ListView.separated(
                       itemCount: _loggedSets.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 6),
+                      separatorBuilder: (_, _) => const SizedBox(height: 6),
                       itemBuilder: (context, index) {
                         final set = _loggedSets[index];
                         return Container(

@@ -9,18 +9,18 @@ void main() {
   runApp(const ProviderScope(child: CalApp()));
 }
 
-class CalApp extends StatelessWidget {
+class CalApp extends ConsumerWidget {
   const CalApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp.router(
       title: 'Cal',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.dark, // Calm dark mode default
-      routerConfig: appRouter,
+      routerConfig: ref.watch(appRouterProvider),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

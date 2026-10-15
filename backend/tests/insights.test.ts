@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import { app } from '../src/app.js';
 import { pool } from '../src/config/db.js';
@@ -16,11 +16,17 @@ describe('Phase 9 - F19 Weekly Insights Integration', () => {
         password: 'Password123!',
         name: 'Andi Insightful',
         age: 26,
+        heightCm: 170,
+        weightKg: 65,
       });
 
     expect(res.status).toBe(201);
     authToken = res.body.data.accessToken;
     userId = res.body.data.user.id;
+  });
+
+  afterAll(async () => {
+    if (userId) await pool.query('DELETE FROM users WHERE id = $1', [userId]);
   });
 
   it('handles empty state gracefully without crashing and distinguishes no-data from zero', async () => {
@@ -91,5 +97,15 @@ describe('Phase 9 - F19 Weekly Insights Integration', () => {
     expect(res.body.data.averageCalories).toBeGreaterThan(0);
     expect(res.body.data.totalWorkoutVolumeKg).toBeGreaterThanOrEqual(500);
     expect(res.body.data.narrative.length).toBeGreaterThan(20);
+  });
+
+  it('reports missing nutrition targets instead of substituting generic values', async () => {
+    await pool.query('DELETE FROM user_nutrition_targets WHERE user_id = $1', [userId]);
+    const res = await request(app)
+      .get('/api/v1/insights/weekly')
+      .set('Authorization', `Bearer ${authToken}`);
+
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('NUTRITION_TARGETS_NOT_SET');
   });
 });

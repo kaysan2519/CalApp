@@ -8,6 +8,9 @@ class GamificationProfile {
   final int nextLevelXp;
   final double levelProgressRatio;
   final int unlockedAchievementsCount;
+  final RankTier? currentRank;
+  final List<RankTier> ranks;
+  final List<XpHistoryItem> xpHistory;
 
   GamificationProfile({
     required this.totalXp,
@@ -19,6 +22,9 @@ class GamificationProfile {
     required this.nextLevelXp,
     required this.levelProgressRatio,
     required this.unlockedAchievementsCount,
+    this.currentRank,
+    this.ranks = const [],
+    this.xpHistory = const [],
   });
 
   factory GamificationProfile.fromJson(Map<String, dynamic> json) {
@@ -32,8 +38,66 @@ class GamificationProfile {
       nextLevelXp: (json['nextLevelXp'] as num?)?.toInt() ?? 100,
       levelProgressRatio: (json['levelProgressRatio'] as num?)?.toDouble() ?? 0.0,
       unlockedAchievementsCount: (json['unlockedAchievementsCount'] as num?)?.toInt() ?? 0,
+      currentRank: json['currentRank'] is Map<String, dynamic>
+          ? RankTier.fromJson(Map<String, dynamic>.from(json['currentRank']))
+          : null,
+      ranks: (json['ranks'] as List<dynamic>? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(RankTier.fromJson)
+          .toList(growable: false),
+      xpHistory: (json['xpHistory'] as List<dynamic>? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(XpHistoryItem.fromJson)
+          .toList(growable: false),
     );
   }
+}
+
+class RankTier {
+  final String name;
+  final String iconName;
+  final String description;
+  final int minXp;
+  final String? nextRankName;
+  final int? nextRankXp;
+  final int xpToNextRank;
+  final double progressRatio;
+
+  const RankTier({
+    required this.name,
+    required this.iconName,
+    required this.description,
+    required this.minXp,
+    this.nextRankName,
+    this.nextRankXp,
+    this.xpToNextRank = 0,
+    this.progressRatio = 0,
+  });
+
+  factory RankTier.fromJson(Map<String, dynamic> json) => RankTier(
+        name: json['name']?.toString() ?? 'Rookie',
+        iconName: json['icon']?.toString() ?? 'emoji_events',
+        description: json['description']?.toString() ?? '',
+        minXp: (json['minXp'] as num?)?.toInt() ?? 0,
+        nextRankName: json['nextRankName']?.toString(),
+        nextRankXp: (json['nextRankXp'] as num?)?.toInt(),
+        xpToNextRank: (json['xpToNextRank'] as num?)?.toInt() ?? 0,
+        progressRatio: (json['progressRatio'] as num?)?.toDouble() ?? 0,
+      );
+}
+
+class XpHistoryItem {
+  final String eventCode;
+  final int xpAmount;
+  final String createdAt;
+
+  const XpHistoryItem({required this.eventCode, required this.xpAmount, required this.createdAt});
+
+  factory XpHistoryItem.fromJson(Map<String, dynamic> json) => XpHistoryItem(
+        eventCode: json['event_code']?.toString() ?? 'activity',
+        xpAmount: (json['xp_amount'] as num?)?.toInt() ?? 0,
+        createdAt: json['created_at']?.toString() ?? '',
+      );
 }
 
 class AchievementItem {
@@ -76,7 +140,8 @@ class LeaderboardItem {
   final String displayName;
   final int weekXp;
   final int currentLevel;
-  final int rank;
+  final int? rank;
+  final int? pointsToNextRank;
 
   LeaderboardItem({
     required this.userId,
@@ -84,15 +149,17 @@ class LeaderboardItem {
     required this.weekXp,
     required this.currentLevel,
     required this.rank,
+    this.pointsToNextRank,
   });
 
   factory LeaderboardItem.fromJson(Map<String, dynamic> json) {
     return LeaderboardItem(
       userId: json['user_id'] as String,
       displayName: json['display_name'] as String? ?? 'Sahabat Cal',
-      weekXp: (json['week_xp'] as num?)?.toInt() ?? 0,
+      weekXp: int.tryParse(json['week_xp']?.toString() ?? '') ?? 0,
       currentLevel: (json['current_level'] as num?)?.toInt() ?? 1,
-      rank: (json['rank'] as num?)?.toInt() ?? 1,
+      rank: int.tryParse(json['rank']?.toString() ?? ''),
+      pointsToNextRank: int.tryParse(json['points_to_next_rank']?.toString() ?? ''),
     );
   }
 }

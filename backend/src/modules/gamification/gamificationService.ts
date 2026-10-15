@@ -1,5 +1,7 @@
 import { pool } from '../../config/db.js';
 
+type ActivityXpEvent = 'meal_logged' | 'workout_completed' | 'community_post';
+
 export interface AwardXpResult {
   awarded: boolean;
   xpAmount: number;
@@ -13,6 +15,43 @@ export interface AwardXpResult {
 
 export class GamificationService {
   private readonly DAILY_XP_CAP = 500;
+  private readonly RANKS = [
+    { name: 'Rookie', icon: 'emoji_events', description: 'Mulai membangun kebiasaan sehat.', minXp: 0 },
+    { name: 'Bronze', icon: 'military_tech', description: 'Konsisten mencatat aktivitas.', minXp: 100 },
+    { name: 'Silver', icon: 'workspace_premium', description: 'Menjaga progres dari minggu ke minggu.', minXp: 500 },
+    { name: 'Gold', icon: 'star', description: 'Membentuk rutinitas yang kuat.', minXp: 1_500 },
+    { name: 'Platinum', icon: 'stars', description: 'Menunjukkan konsistensi jangka panjang.', minXp: 5_000 },
+    { name: 'Diamond', icon: 'diamond', description: 'Mencapai progres yang luar biasa.', minXp: 15_000 },
+    { name: 'Elite', icon: 'workspace_premium', description: 'Menjadi teladan kebiasaan sehat.', minXp: 50_000 },
+  ] as const;
+
+  private readonly ACTIVITY_REWARDS: Record<ActivityXpEvent, number> = {
+    meal_logged: 10,
+    workout_completed: 25,
+    community_post: 15,
+  } as const;
+
+  async awardActivityXp(userId: string, eventCode: ActivityXpEvent, activityId: string) {
+    const ownershipQueries: Record<ActivityXpEvent, string> = {
+      meal_logged: 'SELECT id FROM meal_logs WHERE id = $1 AND user_id = $2',
+      workout_completed: `SELECT s.id FROM workout_sessions s
+        WHERE s.id = $1 AND s.user_id = $2 AND s.status = 'completed'
+          AND EXISTS (SELECT 1 FROM workout_sets ws WHERE ws.session_id = s.id)`,
+      community_post: 'SELECT id FROM community_posts WHERE id = $1 AND user_id = $2',
+    };
+    const activity = await pool.query(ownershipQueries[eventCode], [activityId, userId]);
+    if (activity.rows.length === 0) {
+      throw { statusCode: 404, code: 'XP_ACTIVITY_NOT_FOUND', message: 'Aktivitas tercatat tidak ditemukan untuk akun ini.' };
+    }
+
+    return this.awardXp(
+      userId,
+      eventCode,
+      this.ACTIVITY_REWARDS[eventCode],
+      `activity:${userId}:${eventCode}:${activityId}`,
+      { activityId },
+    );
+  }
 
   /**
    * Calculate current level from total XP using a progressive formula:
@@ -34,7 +73,7 @@ export class GamificationService {
   /**
    * Award XP to a user with idempotency check, daily cap (500 XP), and auto-leveling
    */
-  async awardXp(
+  private async awardXp(
     userId: string,
     eventCode: string,
     requestedXp: number,
@@ -46,15 +85,18 @@ export class GamificationService {
     try {
       await client.query('BEGIN');
 
+      // Lock the user's XP row before reading the cap or idempotency key.
+      // This serializes concurrent awards for the same account.
+      const currentProfile = await this.getOrCreateUserXp(client, userId);
+
       // 1. Check idempotency
       const existingEvent = await client.query(
-        'SELECT id, xp_amount, created_at FROM xp_audit_logs WHERE idempotency_key = $1',
-        [idempotencyKey]
+        'SELECT id, xp_amount, created_at FROM xp_audit_logs WHERE user_id = $1 AND idempotency_key = $2',
+        [userId, idempotencyKey]
       );
 
       if (existingEvent.rows.length > 0) {
         // Already processed
-        const currentProfile = await this.getOrCreateUserXp(client, userId);
         const dailyXp = await this.getDailyXpTotal(client, userId);
         await client.query('COMMIT');
 
@@ -82,7 +124,6 @@ export class GamificationService {
           [userId, eventCode, idempotencyKey, JSON.stringify({ ...metadata, capped: true })]
         );
 
-        const currentProfile = await this.getOrCreateUserXp(client, userId);
         await client.query('COMMIT');
 
         return {
@@ -108,16 +149,15 @@ export class GamificationService {
       );
 
       // 4. Update user_xp table
-      const profile = await this.getOrCreateUserXp(client, userId);
-      const newTotalXp = profile.total_xp + actualXp;
+      const newTotalXp = currentProfile.total_xp + actualXp;
       const newLevel = this.calculateLevel(newTotalXp);
 
       // Update streaks if active today
       const today = new Date().toISOString().slice(0, 10);
-      let newStreak = profile.current_streak_days;
+      let newStreak = currentProfile.current_streak_days;
 
-      if (profile.last_activity_date) {
-        const lastDate = new Date(profile.last_activity_date).toISOString().slice(0, 10);
+      if (currentProfile.last_activity_date) {
+        const lastDate = new Date(currentProfile.last_activity_date).toISOString().slice(0, 10);
         const lastDateTime = new Date(lastDate).getTime();
         const todayTime = new Date(today).getTime();
         const diffDays = Math.round((todayTime - lastDateTime) / (1000 * 60 * 60 * 24));
@@ -164,16 +204,14 @@ export class GamificationService {
   }
 
   private async getOrCreateUserXp(client: any, userId: string) {
-    const res = await client.query('SELECT * FROM user_xp WHERE user_id = $1', [userId]);
-    if (res.rows.length > 0) return res.rows[0];
-
-    const insert = await client.query(
+    await client.query(
       `INSERT INTO user_xp (user_id, total_xp, current_level, current_streak_days)
-       VALUES ($1, 0, 1, 0)
-       RETURNING *`,
-      [userId]
+       VALUES ($1, 0, 1, 0) ON CONFLICT (user_id) DO NOTHING`,
+      [userId],
     );
-    return insert.rows[0];
+    const profile = await client.query('SELECT * FROM user_xp WHERE user_id = $1 FOR UPDATE', [userId]);
+    if (profile.rows.length === 0) throw new Error('Could not initialize XP profile for user.');
+    return profile.rows[0];
   }
 
   private async getDailyXpTotal(client: any, userId: string): Promise<number> {
@@ -181,8 +219,8 @@ export class GamificationService {
       `SELECT COALESCE(SUM(xp_amount), 0) as daily_total
        FROM xp_audit_logs
        WHERE user_id = $1
-         AND created_at >= CURRENT_DATE AT TIME ZONE 'Asia/Jakarta'
-         AND created_at < (CURRENT_DATE + INTERVAL '1 day') AT TIME ZONE 'Asia/Jakarta'`,
+         AND created_at >= date_trunc('day', NOW() AT TIME ZONE 'Asia/Jakarta') AT TIME ZONE 'Asia/Jakarta'
+         AND created_at < (date_trunc('day', NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 day') AT TIME ZONE 'Asia/Jakarta'`,
       [userId]
     );
     return parseInt(res.rows[0].daily_total, 10) || 0;
@@ -244,6 +282,17 @@ export class GamificationService {
       const progressInLevel = profile.total_xp - currentLevelBaseXp;
       const neededForNext = Math.max(1, nextLevelXp - currentLevelBaseXp);
       const levelProgressRatio = Math.min(1.0, Math.max(0.0, progressInLevel / neededForNext));
+      let currentRankIndex = 0;
+      for (let index = 0; index < this.RANKS.length; index += 1) {
+        if (profile.total_xp >= this.RANKS[index].minXp) currentRankIndex = index;
+      }
+      const currentRank = this.RANKS[currentRankIndex];
+      const nextRank = this.RANKS[currentRankIndex + 1] ?? null;
+      const xpHistory = await client.query(
+        `SELECT event_code, xp_amount, metadata, created_at FROM xp_audit_logs
+         WHERE user_id = $1 AND xp_amount > 0 ORDER BY created_at DESC LIMIT 20`,
+        [userId],
+      );
 
       // Achievements count
       const achCountRes = await client.query(
@@ -262,6 +311,17 @@ export class GamificationService {
         nextLevelXp,
         levelProgressRatio,
         unlockedAchievementsCount: totalAchievements,
+        currentRank: {
+          ...currentRank,
+          nextRankName: nextRank?.name ?? null,
+          nextRankXp: nextRank?.minXp ?? null,
+          progressRatio: nextRank
+            ? Math.min(1, Math.max(0, (profile.total_xp - currentRank.minXp) / (nextRank.minXp - currentRank.minXp)))
+            : 1,
+          xpToNextRank: nextRank ? Math.max(0, nextRank.minXp - profile.total_xp) : 0,
+        },
+        ranks: this.RANKS,
+        xpHistory: xpHistory.rows,
       };
     } finally {
       client.release();
@@ -288,60 +348,51 @@ export class GamificationService {
   /**
    * Weekly leaderboard with canonical Asia/Jakarta timezone and deterministic tie-breaking
    */
-  async getLeaderboard(userId: string, limit = 50) {
-    // Current week: Monday 00:00:00 Asia/Jakarta to now
-    const query = `
-      WITH weekly_xp AS (
-        SELECT x.user_id,
-               SUM(x.xp_amount) as week_xp,
-               MIN(x.created_at) as earliest_time
-        FROM xp_audit_logs x
-        WHERE x.created_at >= date_trunc('week', NOW() AT TIME ZONE 'Asia/Jakarta') AT TIME ZONE 'Asia/Jakarta'
-        GROUP BY x.user_id
-      ),
-      ranked_users AS (
-        SELECT u.id as user_id,
-               u.name as display_name,
-               COALESCE(wx.week_xp, 0) as week_xp,
-               COALESCE(ux.current_level, 1) as current_level,
-               RANK() OVER (ORDER BY COALESCE(wx.week_xp, 0) DESC, wx.earliest_time ASC NULLS LAST) as rank
-        FROM users u
-        LEFT JOIN weekly_xp wx ON u.id = wx.user_id
+  async getLeaderboard(userId: string, limit = 50, period: 'weekly' | 'global' = 'weekly') {
+    const scores = period === 'global'
+      ? `scores AS (
+           SELECT user_id, total_xp AS score, updated_at AS earliest_time
+           FROM user_xp WHERE total_xp > 0
+         )`
+      : `scores AS (
+           SELECT x.user_id, SUM(x.xp_amount)::INTEGER AS score, MIN(x.created_at) AS earliest_time
+           FROM xp_audit_logs x
+           WHERE x.xp_amount > 0
+             AND x.created_at >= date_trunc('week', NOW() AT TIME ZONE 'Asia/Jakarta') AT TIME ZONE 'Asia/Jakarta'
+           GROUP BY x.user_id
+         )`;
+    const rankQuery = `
+      WITH ${scores}, ranked_users AS (
+        SELECT u.id AS user_id, u.name AS display_name, s.score AS week_xp,
+               COALESCE(ux.current_level, 1) AS current_level,
+               RANK() OVER (ORDER BY s.score DESC, s.earliest_time ASC, u.id ASC)::INTEGER AS rank,
+               LAG(s.score) OVER (ORDER BY s.score DESC, s.earliest_time ASC, u.id ASC) AS score_ahead
+        FROM scores s
+        JOIN users u ON u.id = s.user_id
         LEFT JOIN user_xp ux ON u.id = ux.user_id
       )
-      SELECT * FROM ranked_users
-      ORDER BY rank ASC
-      LIMIT $1;
-    `;
-
-    const res = await pool.query(query, [limit]);
-
-    // Also find current user rank
+      SELECT user_id, display_name, week_xp, current_level, rank,
+             CASE WHEN rank = 1 THEN NULL ELSE score_ahead - week_xp END AS points_to_next_rank
+      FROM ranked_users ORDER BY rank ASC LIMIT $1`;
     const userRankQuery = `
-      WITH weekly_xp AS (
-        SELECT x.user_id,
-               SUM(x.xp_amount) as week_xp,
-               MIN(x.created_at) as earliest_time
-        FROM xp_audit_logs x
-        WHERE x.created_at >= date_trunc('week', NOW() AT TIME ZONE 'Asia/Jakarta') AT TIME ZONE 'Asia/Jakarta'
-        GROUP BY x.user_id
-      ),
-      ranked_users AS (
-        SELECT u.id as user_id,
-               u.name as display_name,
-               COALESCE(wx.week_xp, 0) as week_xp,
-               COALESCE(ux.current_level, 1) as current_level,
-               RANK() OVER (ORDER BY COALESCE(wx.week_xp, 0) DESC, wx.earliest_time ASC NULLS LAST) as rank
-        FROM users u
-        LEFT JOIN weekly_xp wx ON u.id = wx.user_id
+      WITH ${scores}, ranked_users AS (
+        SELECT u.id AS user_id, u.name AS display_name, s.score AS week_xp,
+               COALESCE(ux.current_level, 1) AS current_level,
+               RANK() OVER (ORDER BY s.score DESC, s.earliest_time ASC, u.id ASC)::INTEGER AS rank,
+               LAG(s.score) OVER (ORDER BY s.score DESC, s.earliest_time ASC, u.id ASC) AS score_ahead
+        FROM scores s
+        JOIN users u ON u.id = s.user_id
         LEFT JOIN user_xp ux ON u.id = ux.user_id
-      )
-      SELECT * FROM ranked_users WHERE user_id = $1;
-    `;
-    const userRankRes = await pool.query(userRankQuery, [userId]);
+      ) SELECT user_id, display_name, week_xp, current_level, rank,
+               CASE WHEN rank = 1 THEN NULL ELSE score_ahead - week_xp END AS points_to_next_rank
+        FROM ranked_users WHERE user_id = $1`;
+    const [res, userRankRes] = await Promise.all([
+      pool.query(rankQuery, [limit]),
+      pool.query(userRankQuery, [userId]),
+    ]);
 
     return {
-      period: 'weekly',
+      period,
       canonicalTimezone: 'Asia/Jakarta',
       leaderboard: res.rows,
       currentUserRank: userRankRes.rows[0] || null,

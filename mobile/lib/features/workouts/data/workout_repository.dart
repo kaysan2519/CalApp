@@ -57,7 +57,7 @@ class WorkoutRepository {
       '/workouts/sessions',
       data: {
         'title': title,
-        if (routineId != null) 'routineId': routineId,
+        'routineId': ?routineId,
       },
     );
     return WorkoutSessionItem.fromJson(response.data['data']);
@@ -78,7 +78,7 @@ class WorkoutRepository {
         'setNumber': setNumber,
         'reps': reps,
         'weightKg': weightKg,
-        if (rpe != null) 'rpe': rpe,
+        'rpe': ?rpe,
       },
     );
     return response.data['data'] as Map<String, dynamic>;
@@ -88,7 +88,7 @@ class WorkoutRepository {
     final response = await apiClient.put(
       '/workouts/sessions/$sessionId/finish',
       data: {
-        if (notes != null) 'notes': notes,
+        'notes': ?notes,
       },
     );
     return WorkoutSessionItem.fromJson(response.data['data']);
@@ -141,11 +141,11 @@ class WorkoutRepository {
       '/body/measurements',
       data: {
         'weightKg': weightKg,
-        if (waistCm != null) 'waistCm': waistCm,
-        if (chestCm != null) 'chestCm': chestCm,
-        if (hipsCm != null) 'hipsCm': hipsCm,
-        if (measuredDate != null) 'measuredDate': measuredDate,
-        if (notes != null) 'notes': notes,
+        'waistCm': ?waistCm,
+        'chestCm': ?chestCm,
+        'hipsCm': ?hipsCm,
+        'measuredDate': ?measuredDate,
+        'notes': ?notes,
       },
     );
     return BodyMeasurementItem.fromJson(response.data['data']);

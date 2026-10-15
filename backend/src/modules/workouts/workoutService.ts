@@ -1,5 +1,6 @@
 import { query } from '../../config/db.js';
 import { AIService } from '../ai/aiService.js';
+import { gamificationService } from '../gamification/gamificationService.js';
 
 export interface ExerciseFilter {
   muscle?: string;
@@ -263,7 +264,13 @@ export class WorkoutService {
       [sessionId, userId, durationSeconds, totalVolumeKg, notes || null]
     );
 
-    return updateRes.rows[0];
+      let xpReward = null;
+      try {
+        xpReward = await gamificationService.awardActivityXp(userId, 'workout_completed', sessionId);
+      } catch {
+        // The completed session remains saved if XP storage is temporarily unavailable.
+      }
+      return { ...updateRes.rows[0], xpReward };
   }
 
   static async getUserSessions(userId: string, limit: number = 20) {

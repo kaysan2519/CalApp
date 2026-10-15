@@ -248,7 +248,7 @@ class _TextFoodEntryDialogState extends ConsumerState<TextFoodEntryDialog> {
                         Expanded(
                           child: ListView.separated(
                             itemCount: _parsedResponse!.parsedItems.length,
-                            separatorBuilder: (_, __) => const Divider(height: 12),
+                            separatorBuilder: (_, _) => const Divider(height: 12),
                             itemBuilder: (context, index) {
                               final item = _parsedResponse!.parsedItems[index];
                               return Container(

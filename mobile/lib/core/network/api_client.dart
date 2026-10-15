@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../storage/token_storage.dart';
 
@@ -30,21 +33,27 @@ class ApiClient {
   final Dio dio;
   final TokenStorage tokenStorage;
 
-  // Default to localhost:4000 (Windows/Web), or 10.0.2.2:4000 for Android emulator
-  static const String defaultBaseUrl = 'http://127.0.0.1:4000/api/v1';
+  static const String _configuredBaseUrl = String.fromEnvironment('API_BASE_URL');
+  static String get defaultBaseUrl => _configuredBaseUrl.isNotEmpty
+      ? _configuredBaseUrl
+      : defaultTargetPlatform == TargetPlatform.android
+          ? 'http://10.0.2.2:4000/api/v1'
+          : 'http://127.0.0.1:4000/api/v1';
+
+  Future<String?>? _refreshInProgress;
 
   ApiClient({
     required this.tokenStorage,
-    String baseUrl = defaultBaseUrl,
+    String? baseUrl,
     Dio? customDio,
   }) : dio = customDio ?? Dio(BaseOptions(
-          baseUrl: baseUrl,
+          baseUrl: baseUrl ?? defaultBaseUrl,
           connectTimeout: const Duration(seconds: 10),
           receiveTimeout: const Duration(seconds: 15),
           headers: {'Content-Type': 'application/json'},
         )) {
     dio.interceptors.add(
-      InterceptorsWrapper(
+      QueuedInterceptorsWrapper(
         onRequest: (options, handler) async {
           final token = await tokenStorage.getAccessToken();
           if (token != null && token.isNotEmpty) {
@@ -52,7 +61,30 @@ class ApiClient {
           }
           return handler.next(options);
         },
-        onError: (DioException error, handler) {
+        onError: (DioException error, handler) async {
+          final request = error.requestOptions;
+          final isAuthEndpoint = request.path.endsWith('/auth/login') ||
+              request.path.endsWith('/auth/register') ||
+              request.path.endsWith('/auth/refresh');
+          if (error.response?.statusCode == 401 &&
+              !isAuthEndpoint &&
+              request.extra['authRetried'] != true) {
+            try {
+              final refreshFuture = _refreshInProgress ??= _refreshAccessToken();
+              final accessToken = await refreshFuture;
+              if (identical(_refreshInProgress, refreshFuture)) _refreshInProgress = null;
+              if (accessToken != null) {
+                request.headers['Authorization'] = 'Bearer $accessToken';
+                request.extra['authRetried'] = true;
+                final retried = await dio.fetch<dynamic>(request);
+                return handler.resolve(retried);
+              }
+              await tokenStorage.clearTokens();
+            } catch (_) {
+              _refreshInProgress = null;
+              await tokenStorage.clearTokens();
+            }
+          }
           final response = error.response;
           if (response?.data != null && response?.data is Map) {
             final errorData = response!.data['error'];
@@ -75,6 +107,25 @@ class ApiClient {
         },
       ),
     );
+  }
+
+  Future<String?> _refreshAccessToken() async {
+    final refreshToken = await tokenStorage.getRefreshToken();
+    if (refreshToken == null || refreshToken.isEmpty) return null;
+    final response = await dio.post<Map<String, dynamic>>(
+      '/auth/refresh',
+      data: {'refreshToken': refreshToken},
+    );
+    final data = response.data?['data'];
+    if (data is! Map || data['accessToken'] is! String || data['refreshToken'] is! String) {
+      throw StateError('Refresh response was invalid.');
+    }
+    final accessToken = data['accessToken'] as String;
+    await tokenStorage.saveTokens(
+      accessToken: accessToken,
+      refreshToken: data['refreshToken'] as String,
+    );
+    return accessToken;
   }
 
   Future<Response<T>> get<T>(String path, {Map<String, dynamic>? queryParameters}) {
