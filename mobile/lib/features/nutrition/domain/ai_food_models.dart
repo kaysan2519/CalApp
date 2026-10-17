@@ -37,6 +37,47 @@ class AiVisionDraftItem {
       isAiEstimate: json['isAiEstimate'] as bool? ?? true,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (foodItemId != null) 'foodItemId': foodItemId,
+      'foodName': foodName,
+      'portionDescription': portionDescription,
+      'estimatedGrams': estimatedGrams,
+      'calories': calories,
+      'proteinG': proteinG,
+      'carbsG': carbsG,
+      'fatG': fatG,
+      'confidenceScore': confidenceScore,
+      'isAiEstimate': isAiEstimate,
+    };
+  }
+
+  AiVisionDraftItem copyWith({
+    String? foodItemId,
+    String? foodName,
+    String? portionDescription,
+    double? estimatedGrams,
+    double? calories,
+    double? proteinG,
+    double? carbsG,
+    double? fatG,
+    double? confidenceScore,
+    bool? isAiEstimate,
+  }) {
+    return AiVisionDraftItem(
+      foodItemId: foodItemId ?? this.foodItemId,
+      foodName: foodName ?? this.foodName,
+      portionDescription: portionDescription ?? this.portionDescription,
+      estimatedGrams: estimatedGrams ?? this.estimatedGrams,
+      calories: calories ?? this.calories,
+      proteinG: proteinG ?? this.proteinG,
+      carbsG: carbsG ?? this.carbsG,
+      fatG: fatG ?? this.fatG,
+      confidenceScore: confidenceScore ?? this.confidenceScore,
+      isAiEstimate: isAiEstimate ?? this.isAiEstimate,
+    );
+  }
 }
 
 class AiVisionFoodResponse {

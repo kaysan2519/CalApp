@@ -71,6 +71,25 @@ class FakeAiRepository extends AiRepository {
   }
 
   @override
+  Future<List<AiVisionDraftItem>> refineFoodDraft({
+    required List<AiVisionDraftItem> items,
+    required String instruction,
+  }) async {
+    return items.map((i) {
+      if (instruction.toLowerCase().contains('setengah')) {
+        return i.copyWith(
+          estimatedGrams: (i.estimatedGrams * 0.5).roundToDouble(),
+          calories: (i.calories * 0.5).roundToDouble(),
+          proteinG: (i.proteinG * 0.5),
+          carbsG: (i.carbsG * 0.5),
+          fatG: (i.fatG * 0.5),
+        );
+      }
+      return i;
+    }).toList();
+  }
+
+  @override
   Future<Map<String, dynamic>> sendCoachMessage(String message) async {
     return {
       'message': 'Berdasarkan data hari ini, asupan protein Anda sudah mencapai target. Bagus sekali!',
@@ -236,6 +255,35 @@ void main() {
       expect(find.text('92% yakin'), findsOneWidget);
       expect(find.text('236 kkal'), findsOneWidget);
       expect(find.text('Simpan 1 Makanan ke Makan Malam'), findsOneWidget);
+    });
+
+    testWidgets('supports 3D kinetic macro ring, AI co-editor whisper refinement, and verification sheet', (tester) async {
+      tester.view.physicalSize = const Size(800, 1400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(
+        buildTestableWidget(
+          const AiVisionFoodSheet(mealType: 'lunch', mealTitle: 'Makan Siang'),
+        ),
+      );
+
+      // Scan meal
+      await tester.tap(find.text('Ambil Foto / Pindai Sekarang'));
+      await tester.pumpAndSettle();
+
+      // Verify Kinetic 3D Macro Ring and Daily Budget
+      expect(find.text('Target Harian: 2.100'), findsOneWidget);
+      expect(find.text('27% porsi'), findsOneWidget);
+      expect(find.text('KKAL'), findsOneWidget);
+
+      // Verify AI Co-Editor Whisper Chip "Nasi 1/2 Porsi"
+      expect(find.text('Nasi 1/2 Porsi'), findsOneWidget);
+      await tester.tap(find.text('Nasi 1/2 Porsi'));
+      await tester.pumpAndSettle();
+
+      // Verify Slide-to-Log label is visible
+      expect(find.text('Geser untuk Verifikasi & Catat ➔'), findsOneWidget);
     });
   });
 

@@ -150,4 +150,60 @@ describe('Phase 5 - AI Features, Safety Bounds & Evaluation Benchmark', () => {
     expect(res.body.data.routines.length).toBeGreaterThan(0);
     expect(res.body.data.routines[0].exercises.length).toBeGreaterThan(0);
   });
+
+  it('F02/F04: AI Co-Editor refines draft meal items using natural language instructions', async () => {
+    const initialItems = [
+      {
+        foodItemId: 'food-rice-id',
+        foodName: 'Nasi Putih',
+        portionDescription: '1 piring',
+        estimatedGrams: 200,
+        calories: 260,
+        proteinG: 5.4,
+        carbsG: 56.4,
+        fatG: 0.6,
+      },
+      {
+        foodItemId: 'food-chicken-id',
+        foodName: 'Dada Ayam Panggang',
+        portionDescription: '1 potong',
+        estimatedGrams: 120,
+        calories: 220,
+        proteinG: 32.0,
+        carbsG: 2.0,
+        fatG: 9.0,
+      },
+    ];
+
+    // Refinement 1: Halve rice portion
+    const res1 = await request(app)
+      .post('/api/v1/ai/food-refine')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        items: initialItems,
+        instruction: 'Nasinya kurangi setengah piring',
+      });
+
+    expect(res1.status).toBe(200);
+    expect(res1.body.success).toBe(true);
+    const refinedRice = res1.body.data.items.find((i: any) => i.foodName.includes('Nasi'));
+    expect(refinedRice.estimatedGrams).toBe(100);
+    expect(refinedRice.calories).toBe(130);
+
+    // Refinement 2: Skinless chicken modifier
+    const res2 = await request(app)
+      .post('/api/v1/ai/food-refine')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        items: initialItems,
+        instruction: 'Ayamnya dada tanpa kulit',
+      });
+
+    expect(res2.status).toBe(200);
+    expect(res2.body.success).toBe(true);
+    const refinedChicken = res2.body.data.items.find((i: any) => i.foodName.includes('Ayam'));
+    expect(refinedChicken.fatG).toBeLessThan(9.0);
+    expect(refinedChicken.foodName).toContain('Skinless');
+  });
 });
+

@@ -10,6 +10,22 @@ const textSchema = z.object({
   text: z.string().min(3, 'Teks deskripsi makanan minimal 3 karakter'),
 });
 
+const refineSchema = z.object({
+  items: z.array(
+    z.object({
+      foodItemId: z.string().nullable().optional(),
+      foodName: z.string(),
+      portionDescription: z.string().optional(),
+      estimatedGrams: z.number().default(100),
+      calories: z.number().default(0),
+      proteinG: z.number().default(0),
+      carbsG: z.number().default(0),
+      fatG: z.number().default(0),
+    })
+  ).min(1, 'Minimal satu item makanan untuk disesuaikan'),
+  instruction: z.string().min(2, 'Instruksi penyesuaian minimal 2 karakter'),
+});
+
 const coachSchema = z.object({
   message: z.string().min(2, 'Pesan chat minimal 2 karakter'),
 });
@@ -38,6 +54,19 @@ export class AIController {
     try {
       const validated = textSchema.parse(req.body);
       const result = await AIService.parseFoodText(validated.text);
+      res.json({
+        success: true,
+        data: result,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async refineFoodDraft(req: Request, res: Response, next: NextFunction) {
+    try {
+      const validated = refineSchema.parse(req.body);
+      const result = await AIService.refineMealDraft(validated.items, validated.instruction);
       res.json({
         success: true,
         data: result,

@@ -12,6 +12,9 @@ aiRouter.post('/food-vision', AIController.foodVision);
 // F04: Teks Bahasa Sehari-hari
 aiRouter.post('/food-text', AIController.foodText);
 
+// F02/F04: AI Co-Editor Natural Language Meal Refinement
+aiRouter.post('/food-refine', AIController.refineFoodDraft);
+
 // F08: AI Nutrition Coach
 aiRouter.post('/coach/chat', AIController.coachChat);
 

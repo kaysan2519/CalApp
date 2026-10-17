@@ -64,6 +64,93 @@ export class AIService {
     };
   }
 
+  static async refineMealDraft(items: Array<{
+    foodItemId?: string | null;
+    foodName: string;
+    portionDescription?: string;
+    estimatedGrams: number;
+    calories: number;
+    proteinG: number;
+    carbsG: number;
+    fatG: number;
+  }>, instruction: string) {
+    if (!instruction || instruction.trim().length === 0) {
+      return { items, message: 'Tidak ada instruksi perubahan.' };
+    }
+
+    const lower = instruction.toLowerCase().trim();
+    const updatedItems = items.map((item) => {
+      const copy = { ...item };
+      const nameLower = copy.foodName.toLowerCase();
+
+      // Check if this specific item is mentioned or general rule applies
+      const isTargetItem = lower.includes(nameLower) ||
+        (nameLower.includes('nasi') && lower.includes('nasi')) ||
+        (nameLower.includes('ayam') && lower.includes('ayam')) ||
+        (nameLower.includes('sayur') && (lower.includes('sayur') || lower.includes('salad'))) ||
+        (nameLower.includes('tempe') && lower.includes('tempe'));
+
+      // 1. Half portion modifier
+      if ((isTargetItem || items.length === 1) && (lower.includes('setengah') || lower.includes('separuh') || lower.includes('1/2'))) {
+        copy.estimatedGrams = Math.round(copy.estimatedGrams * 0.5);
+        copy.calories = Math.round(copy.calories * 0.5);
+        copy.proteinG = parseFloat((copy.proteinG * 0.5).toFixed(1));
+        copy.carbsG = parseFloat((copy.carbsG * 0.5).toFixed(1));
+        copy.fatG = parseFloat((copy.fatG * 0.5).toFixed(1));
+        copy.portionDescription = `${copy.portionDescription || ''} (1/2 porsi)`.trim();
+      }
+      // 2. Double portion modifier
+      else if ((isTargetItem || items.length === 1) && (lower.includes('dua kali') || lower.includes('double') || lower.includes('2x'))) {
+        copy.estimatedGrams = Math.round(copy.estimatedGrams * 2.0);
+        copy.calories = Math.round(copy.calories * 2.0);
+        copy.proteinG = parseFloat((copy.proteinG * 2.0).toFixed(1));
+        copy.carbsG = parseFloat((copy.carbsG * 2.0).toFixed(1));
+        copy.fatG = parseFloat((copy.fatG * 2.0).toFixed(1));
+      }
+      // 3. Skinless chicken modifier
+      if (nameLower.includes('ayam') && (lower.includes('tanpa kulit') || lower.includes('skinless') || lower.includes('rebus'))) {
+        copy.foodName = copy.foodName.includes('Skinless') ? copy.foodName : `${copy.foodName} (Skinless)`;
+        copy.fatG = Math.max(1, parseFloat((copy.fatG * 0.4).toFixed(1)));
+        copy.calories = Math.round((copy.proteinG * 4) + (copy.carbsG * 4) + (copy.fatG * 9));
+      }
+      // 4. Fried / Flour coated modifier
+      if (nameLower.includes('ayam') && (lower.includes('tepung') || lower.includes('krispi') || lower.includes('crispy'))) {
+        copy.foodName = 'Ayam Goreng Tepung';
+        copy.carbsG = parseFloat((copy.carbsG + 14).toFixed(1));
+        copy.fatG = parseFloat((copy.fatG + 8).toFixed(1));
+        copy.calories = Math.round((copy.proteinG * 4) + (copy.carbsG * 4) + (copy.fatG * 9));
+      }
+      // 5. Without oil / sauce / dressing
+      if (lower.includes('tanpa kuah') || lower.includes('tanpa minyak') || lower.includes('tanpa saus') || lower.includes('tanpa dressing')) {
+        if (nameLower.includes('sayur') || nameLower.includes('salad') || nameLower.includes('kuah') || nameLower.includes('gulai')) {
+          copy.fatG = Math.max(1, parseFloat((copy.fatG * 0.4).toFixed(1)));
+          copy.calories = Math.round((copy.proteinG * 4) + (copy.carbsG * 4) + (copy.fatG * 9));
+        }
+      }
+
+      // 6. Explicit gram modifier: e.g. "150g" or "200 gram"
+      const gramMatch = lower.match(/(\d+)\s*(?:g|gram)/);
+      if (gramMatch && (isTargetItem || items.length === 1)) {
+        const targetGrams = parseInt(gramMatch[1], 10);
+        if (targetGrams > 0 && copy.estimatedGrams > 0) {
+          const ratio = targetGrams / copy.estimatedGrams;
+          copy.estimatedGrams = targetGrams;
+          copy.calories = Math.round(copy.calories * ratio);
+          copy.proteinG = parseFloat((copy.proteinG * ratio).toFixed(1));
+          copy.carbsG = parseFloat((copy.carbsG * ratio).toFixed(1));
+          copy.fatG = parseFloat((copy.fatG * ratio).toFixed(1));
+        }
+      }
+
+      return copy;
+    });
+
+    return {
+      items: updatedItems,
+      message: `Porsi berhasil disesuaikan dengan instruksi: "${instruction}".`,
+    };
+  }
+
   static async parseFoodText(text: string) {
     if (!text || text.trim().length === 0) {
       throw { statusCode: 422, code: 'EMPTY_TEXT', message: 'Teks makanan tidak boleh kosong.' };
