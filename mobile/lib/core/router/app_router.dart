@@ -13,6 +13,7 @@ import '../../features/onboarding/presentation/welcome_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/onboarding/presentation/recommendations_screen.dart';
 import '../../features/gamification/presentation/rank_overview_screen.dart';
+import '../../features/today/presentation/master_action_hub_modal.dart';
 import '../../features/auth/presentation/auth_state_notifier.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -59,6 +60,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       builder: (context, state, navigationShell) {
         return Scaffold(
           body: navigationShell,
+          floatingActionButton: FloatingActionButton(
+            heroTag: 'cal_master_action_fab',
+            onPressed: () => MasterActionHubModal.show(context),
+            backgroundColor: const Color(0xFF10B981),
+            foregroundColor: Colors.black,
+            elevation: 4,
+            tooltip: 'Aksi Cepat & Pindai (+)',
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: const Icon(Icons.add_rounded, size: 28),
+          ),
           bottomNavigationBar: NavigationBar(
             selectedIndex: navigationShell.currentIndex,
             onDestinationSelected: (index) {

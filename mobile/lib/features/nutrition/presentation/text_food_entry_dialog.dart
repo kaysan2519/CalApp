@@ -21,15 +21,64 @@ class TextFoodEntryDialog extends ConsumerStatefulWidget {
 
 class _TextFoodEntryDialogState extends ConsumerState<TextFoodEntryDialog> {
   final _textController = TextEditingController();
+  final _coEditorController = TextEditingController();
   bool _isAnalyzing = false;
   bool _isSaving = false;
+  bool _isRefining = false;
   String? _errorMessage;
   AiTextFoodResponse? _parsedResponse;
 
   @override
   void dispose() {
     _textController.dispose();
+    _coEditorController.dispose();
     super.dispose();
+  }
+
+  Future<void> _refineWithCoEditor(String instruction) async {
+    if (instruction.trim().isEmpty || _parsedResponse == null) return;
+    setState(() => _isRefining = true);
+    try {
+      final aiRepo = ref.read(aiRepositoryProvider);
+      final List<AiVisionDraftItem> draftItems = _parsedResponse!.parsedItems.map((item) => AiVisionDraftItem(
+        foodName: item.foodName,
+        portionDescription: '${item.quantity} ${item.rawUnit}',
+        estimatedGrams: item.normalizedGrams,
+        calories: item.calories,
+        proteinG: item.proteinG,
+        carbsG: item.carbsG,
+        fatG: item.fatG,
+        confidenceScore: 0.95,
+      )).toList();
+
+      final updated = await aiRepo.refineFoodDraft(items: draftItems, instruction: instruction);
+      final List<AiTextParsedItem> newParsedItems = updated.map((u) => AiTextParsedItem(
+        foodName: u.foodName,
+        quantity: 1.0,
+        rawUnit: u.portionDescription.isNotEmpty ? u.portionDescription : 'porsi',
+        normalizedGrams: u.estimatedGrams,
+        standardUnit: 'gram',
+        calories: u.calories,
+        proteinG: u.proteinG,
+        carbsG: u.carbsG,
+        fatG: u.fatG,
+        source: 'ai_co_editor',
+      )).toList();
+
+      if (mounted) {
+        setState(() {
+          _parsedResponse = AiTextFoodResponse(
+            originalText: _parsedResponse!.originalText,
+            parsedItems: newParsedItems,
+            notice: 'Porsi & gizi diperbarui sesuai: "$instruction"',
+          );
+          _coEditorController.clear();
+        });
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _isRefining = false);
+    }
   }
 
   Future<void> _analyzeText() async {
@@ -292,6 +341,63 @@ class _TextFoodEntryDialogState extends ConsumerState<TextFoodEntryDialog> {
                                 ),
                               );
                             },
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        // AI Co-Editor: Edit Pakai Deskripsi Makanan
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.darkSurface,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.edit_note_rounded, size: 16, color: AppColors.primary),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Edit Pakai Deskripsi Makanan (AI Co-Editor)',
+                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _coEditorController,
+                                      style: const TextStyle(fontSize: 12, color: Colors.white),
+                                      decoration: InputDecoration(
+                                        hintText: 'Cth: "Nasi 1/2 porsi, ayam tanpa kulit"...',
+                                        hintStyle: const TextStyle(fontSize: 11, color: AppColors.darkTextSecondary),
+                                        isDense: true,
+                                        filled: true,
+                                        fillColor: AppColors.darkBackground,
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                      ),
+                                      onSubmitted: (val) => _refineWithCoEditor(val),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                    onPressed: _isRefining ? null : () => _refineWithCoEditor(_coEditorController.text),
+                                    child: _isRefining
+                                        ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                                        : const Text('Koreksi', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 12),

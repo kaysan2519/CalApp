@@ -7,6 +7,7 @@ import '../../auth/presentation/auth_state_notifier.dart';
 import '../../nutrition/presentation/daily_menu_modal.dart';
 import '../../nutrition/presentation/nutrition_state_notifier.dart';
 import '../../nutrition/presentation/recipes_screen.dart';
+import 'master_action_hub_modal.dart';
 import 'weekly_insight_card.dart';
 
 class TodayScreen extends ConsumerStatefulWidget {
@@ -79,6 +80,11 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.add_circle_rounded, color: AppColors.primary, size: 24),
+            tooltip: 'Pusat Aksi Cepat (+)',
+            onPressed: () => MasterActionHubModal.show(context),
+          ),
           IconButton(
             icon: const Icon(Icons.emoji_events_outlined, color: AppColors.primary),
             tooltip: 'Rank & progres',
@@ -290,6 +296,56 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                   ),
                 );
               },
+            ),
+
+            const SizedBox(height: 16),
+
+            // Master Action Hub Banner
+            InkWell(
+              onTap: () => MasterActionHubModal.show(context),
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF13221C), Color(0xFF0F172A)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.35)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.add_a_photo_rounded, color: Colors.black, size: 22),
+                    ),
+                    const SizedBox(width: 14),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Pusat Aksi Cepat (+)',
+                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Colors.white),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Pindai Kamera AI, Barcode, & Katalog Gerakan Dunia',
+                            style: TextStyle(fontSize: 11, color: AppColors.darkTextSecondary),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.primary, size: 14),
+                  ],
+                ),
+              ),
             ),
 
             const SizedBox(height: 16),
