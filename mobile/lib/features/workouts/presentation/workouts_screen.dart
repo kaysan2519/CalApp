@@ -5,6 +5,7 @@ import '../domain/workout_models.dart';
 import 'active_workout_session_sheet.dart';
 import 'ai_workout_generator_modal.dart';
 import 'body_measurement_modal.dart';
+import 'exercise_detail_modal.dart';
 
 class WorkoutsScreen extends ConsumerStatefulWidget {
   const WorkoutsScreen({super.key});
@@ -438,10 +439,19 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> with SingleTick
                         margin: const EdgeInsets.only(bottom: 10),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         child: ExpansionTile(
-                          leading: CircleAvatar(
-                            backgroundColor: theme.primaryColor.withAlpha(30),
-                            foregroundColor: theme.primaryColor,
-                            child: const Icon(Icons.fitness_center, size: 20),
+                          leading: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.network(
+                              ExerciseDetailModal.getExerciseImageUrl(ex.name, ex.targetMuscle, ex.category),
+                              width: 48,
+                              height: 48,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => CircleAvatar(
+                                backgroundColor: theme.primaryColor.withAlpha(30),
+                                foregroundColor: theme.primaryColor,
+                                child: const Icon(Icons.fitness_center, size: 20),
+                              ),
+                            ),
                           ),
                           title: Text(ex.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                           subtitle: Text(
@@ -460,6 +470,21 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> with SingleTick
                                   Text(
                                     ex.instructions ?? 'Jaga postur punggung tetap lurus dan kendalikan tempo gerakan.',
                                     style: TextStyle(color: Colors.grey[400], height: 1.3),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton.icon(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF6366F1).withAlpha(40),
+                                        foregroundColor: const Color(0xFF818CF8),
+                                        elevation: 0,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      ),
+                                      icon: const Icon(Icons.visibility_rounded, size: 16),
+                                      label: const Text('Buka Foto & Panduan Gerakan Lengkap'),
+                                      onPressed: () => ExerciseDetailModal.show(context, exercise: ex),
+                                    ),
                                   ),
                                 ],
                               ),
