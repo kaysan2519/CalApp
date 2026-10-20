@@ -32,7 +32,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       if (isPublic) {
         if (user != null) {
-          return user.onboardingCompleted ? '/today' : '/onboarding';
+          return '/today';
         }
         return null;
       }
@@ -40,8 +40,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (auth.isLoading) return null;
 
       if (user == null) return '/welcome';
-      if (!user.onboardingCompleted && path != '/onboarding') return '/onboarding';
-      if (user.onboardingCompleted && path == '/onboarding' && !isEditingProfile) return '/today';
+
+
       return null;
     },
     routes: [

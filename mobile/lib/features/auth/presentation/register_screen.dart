@@ -119,7 +119,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           );
 
       if (mounted) {
-        context.go('/onboarding');
+        context.go('/today');
       }
     } catch (err) {
       final cause = err is DioException ? err.error : null;

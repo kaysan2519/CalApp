@@ -49,9 +49,9 @@ export class AuthService {
     try {
       await client.query('BEGIN');
       const userRes = await client.query(
-        `INSERT INTO users (email, password_hash, name, age, gender, height_cm, weight_kg, activity_level, goal, timezone)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-         RETURNING id, email, name, age, gender, height_cm, weight_kg, activity_level, goal, timezone, created_at`,
+        `INSERT INTO users (email, password_hash, name, age, gender, height_cm, weight_kg, activity_level, goal, timezone, onboarding_completed, onboarding_completed_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, TRUE, NOW())
+         RETURNING id, email, name, age, gender, height_cm, weight_kg, activity_level, goal, timezone, onboarding_completed, onboarding_completed_at, created_at`,
         [email, passwordHash, name, dto.age, gender, heightCm, weightKg, activityLevel, goal, timezone],
       );
       const user = userRes.rows[0];
