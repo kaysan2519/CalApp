@@ -28,10 +28,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (path == '/splash') return null;
 
       final auth = ref.read(authStateProvider);
-      if (auth.isLoading || auth.hasError) return '/splash';
-      final user = auth.valueOrNull;
       final isPublic = path == '/welcome' || path == '/login' || path == '/register';
 
+      if (auth.isLoading) return path == '/splash' ? null : '/splash';
+      if (auth.hasError) {
+        if (isPublic) return null;
+        return '/splash';
+      }
+
+      final user = auth.valueOrNull;
       if (user == null) return isPublic ? null : '/welcome';
       if (isPublic) return user.onboardingCompleted ? '/today' : '/onboarding';
       if (!user.onboardingCompleted && path != '/onboarding') return '/onboarding';

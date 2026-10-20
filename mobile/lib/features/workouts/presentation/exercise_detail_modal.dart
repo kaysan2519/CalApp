@@ -259,7 +259,7 @@ class _ExerciseDetailModalState extends ConsumerState<ExerciseDetailModal> {
                             height: 200,
                             width: double.infinity,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
+                            errorBuilder: (context, error, stackTrace) => Container(
                               height: 200,
                               color: const Color(0xFF141923),
                               child: const Icon(Icons.fitness_center_rounded, size: 64, color: Colors.white24),

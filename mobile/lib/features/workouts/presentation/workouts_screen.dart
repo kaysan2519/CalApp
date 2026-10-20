@@ -446,7 +446,7 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> with SingleTick
                               width: 48,
                               height: 48,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => CircleAvatar(
+                              errorBuilder: (context, error, stackTrace) => CircleAvatar(
                                 backgroundColor: theme.primaryColor.withAlpha(30),
                                 foregroundColor: theme.primaryColor,
                                 child: const Icon(Icons.fitness_center, size: 20),

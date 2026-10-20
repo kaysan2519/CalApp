@@ -18,9 +18,17 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<User?>> {
     try {
       final user = await _repository.getCurrentUser();
       state = AsyncValue.data(user);
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
+    } catch (_) {
+      // If server unreachable or token invalid, clear stale tokens so user can proceed to welcome/login screen
+      try {
+        await _repository.tokenStorage.clearTokens();
+      } catch (_) {}
+      state = const AsyncValue.data(null);
     }
+  }
+
+  void reset() {
+    state = const AsyncValue.data(null);
   }
 
   Future<void> login(String email, String password) async {

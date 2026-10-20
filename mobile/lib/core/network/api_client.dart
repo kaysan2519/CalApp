@@ -34,11 +34,16 @@ class ApiClient {
   final TokenStorage tokenStorage;
 
   static const String _configuredBaseUrl = String.fromEnvironment('API_BASE_URL');
-  static String get defaultBaseUrl => _configuredBaseUrl.isNotEmpty
-      ? _configuredBaseUrl
-      : defaultTargetPlatform == TargetPlatform.android
-          ? 'http://10.0.2.2:4000/api/v1'
-          : 'http://127.0.0.1:4000/api/v1';
+  static String get defaultBaseUrl {
+    if (_configuredBaseUrl.isNotEmpty) return _configuredBaseUrl;
+    if (kIsWeb) {
+      return 'http://127.0.0.1:4000/api/v1';
+    }
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:4000/api/v1';
+    }
+    return 'http://127.0.0.1:4000/api/v1';
+  }
 
   Future<String?>? _refreshInProgress;
 
@@ -48,8 +53,8 @@ class ApiClient {
     Dio? customDio,
   }) : dio = customDio ?? Dio(BaseOptions(
           baseUrl: baseUrl ?? defaultBaseUrl,
-          connectTimeout: const Duration(seconds: 10),
-          receiveTimeout: const Duration(seconds: 15),
+          connectTimeout: const Duration(seconds: 8),
+          receiveTimeout: const Duration(seconds: 12),
           headers: {'Content-Type': 'application/json'},
         )) {
     dio.interceptors.add(
@@ -63,6 +68,30 @@ class ApiClient {
         },
         onError: (DioException error, handler) async {
           final request = error.requestOptions;
+
+          // Auto-fallback for Android emulator vs local host/LAN
+          if ((error.type == DioExceptionType.connectionTimeout ||
+                  error.type == DioExceptionType.connectionError) &&
+              request.extra['fallbackRetried'] != true &&
+              request.baseUrl.contains('10.0.2.2')) {
+            request.extra['fallbackRetried'] = true;
+            try {
+              final fallbackOptions = request.copyWith(
+                baseUrl: request.baseUrl.replaceFirst('10.0.2.2', '127.0.0.1'),
+              );
+              final retried = await dio.fetch<dynamic>(fallbackOptions);
+              return handler.resolve(retried);
+            } catch (_) {
+              try {
+                final lanOptions = request.copyWith(
+                  baseUrl: request.baseUrl.replaceFirst('10.0.2.2', '10.2.15.183'),
+                );
+                final lanRetried = await dio.fetch<dynamic>(lanOptions);
+                return handler.resolve(lanRetried);
+              } catch (_) {}
+            }
+          }
+
           final isAuthEndpoint = request.path.endsWith('/auth/login') ||
               request.path.endsWith('/auth/register') ||
               request.path.endsWith('/auth/refresh');

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../auth/presentation/auth_state_notifier.dart';
+import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 
 class SplashScreen extends ConsumerWidget {
@@ -19,13 +20,32 @@ class SplashScreen extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.cloud_off_outlined, color: AppColors.warning, size: 40),
-                const SizedBox(height: 12),
-                const Text('Belum dapat memeriksa sesi Anda.'),
-                const SizedBox(height: 12),
-                OutlinedButton(
+                const Icon(Icons.cloud_off_outlined, color: AppColors.warning, size: 44),
+                const SizedBox(height: 14),
+                const Text(
+                  'Belum dapat terhubung ke server Cal.',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Target Server: ${ApiClient.defaultBaseUrl}\nPastikan server backend di port 4000 sudah aktif.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 12, color: AppColors.darkTextSecondary),
+                ),
+                const SizedBox(height: 18),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
                   onPressed: () => ref.read(authStateProvider.notifier).checkAuth(),
-                  child: const Text('Coba lagi'),
+                  label: const Text('Coba Hubungkan Ulang'),
+                ),
+                const SizedBox(height: 10),
+                TextButton(
+                  onPressed: () async {
+                    await ref.read(tokenStorageProvider).clearTokens();
+                    ref.read(authStateProvider.notifier).reset();
+                    if (context.mounted) context.go('/welcome');
+                  },
+                  child: const Text('Lanjutkan ke Halaman Selamat Datang'),
                 ),
               ],
             ),

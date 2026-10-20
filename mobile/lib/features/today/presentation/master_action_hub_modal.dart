@@ -1324,7 +1324,7 @@ class _MasterActionHubModalState extends ConsumerState<MasterActionHubModal> wit
                 width: 64,
                 height: 64,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
+                errorBuilder: (context, error, stackTrace) => Container(
                   width: 64,
                   height: 64,
                   color: const Color(0xFF1E2433),
@@ -1359,7 +1359,7 @@ class _MasterActionHubModalState extends ConsumerState<MasterActionHubModal> wit
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        ex.equipment ?? ex.category,
+                        ex.equipment.isNotEmpty ? ex.equipment : ex.category,
                         style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10),
                       ),
                     ],

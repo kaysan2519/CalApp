@@ -212,3 +212,12 @@ This log records default decisions, options evaluated, chosen paths, reasons, an
 
 
 
+
+---
+
+## 25. Backend Network Binding, CORP Policy, and Client Resilient Fallback
+- **Context:** Backend needs to reliably serve requests across varied client environments: Flutter Web, Android Emulator (`10.0.2.2`), Physical Android device on local Wi-Fi LAN (`10.2.15.183`), and Desktop.
+- **Options:** Default host binding (`::` or `localhost`), standard Helmet CORP (`same-origin`), single static API URL vs Explicit `0.0.0.0` binding, `cross-origin` CORP, live DB health check, and client multi-target fallback retry.
+- **Decision:** Explicitly bind backend to `0.0.0.0:4000`, configure Helmet with `crossOriginResourcePolicy: { policy: 'cross-origin' }`, add live DB ping to `/api/v1/health`, equip mobile Dio client with automatic fallback retry (`10.0.2.2` -> `127.0.0.1` -> LAN IP `10.2.15.183`), and eliminate fatal splash screen redirect loops when network is offline. Provide `start-backend.bat` for one-click startup.
+- **Reason:** Guarantees backend accessibility from any device or browser without CORS/CORP rejection or IPv6 mismatch, and ensures users are never trapped on a splash screen.
+- **Impact if changed:** Web and physical device testing would experience connection timeouts or browser security rejections.

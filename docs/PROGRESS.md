@@ -17,6 +17,7 @@
 | Register, login, refresh, profil | **TERVERIFIKASI** | Multi-step registration wizard (8 sesi berurutan) dengan validasi form, age-gate 18+, gender, tinggi, berat, aktivitas, tujuan nutrisi. |
 | Onboarding dan edit profil | **TERVERIFIKASI UI/API** | Alur UI dan state tersedia; Flutter analyzer bersih (0 error, 0 warning), test suite 33/33 lulus. |
 | XP, rank, leaderboard | **TERVERIFIKASI API** | Test PostgreSQL menguji XP server-side, idempotensi, batas harian, rank, history dan periode leaderboard. |
+| Backend Reliability & Multi-Host Binding | **TERVERIFIKASI** | Host di-bind ke `0.0.0.0:4000`, Helmet CORP cross-origin, client auto-fallback retry (`10.0.2.2` / `127.0.0.1` / Wi-Fi LAN `10.2.15.183`), live PostgreSQL health check, anti-freeze splash recovery, dan `start-backend.bat` siap pakai. |
 
 ## Verifikasi yang dijalankan
 
