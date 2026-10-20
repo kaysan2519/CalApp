@@ -24,7 +24,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: '/welcome',
     redirect: (context, state) {
       final path = state.matchedLocation;
-      final isEditingProfile = path == '/onboarding' && state.uri.queryParameters['edit'] == 'true';
+
 
       final auth = ref.read(authStateProvider);
       final isPublic = path == '/welcome' || path == '/login' || path == '/register' || path == '/splash';

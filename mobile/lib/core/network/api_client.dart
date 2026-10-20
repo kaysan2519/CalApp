@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -118,17 +119,24 @@ class ApiClient {
             }
           }
           final response = error.response;
-          if (response?.data != null && response?.data is Map) {
-            final errorData = response!.data['error'];
+          dynamic responseData = response?.data;
+          if (responseData is String && responseData.trim().startsWith('{')) {
+            try {
+              responseData = jsonDecode(responseData);
+            } catch (_) {}
+          }
+          if (responseData is Map) {
+            final errorData = responseData['error'];
             if (errorData != null) {
               return handler.reject(
                 DioException(
                   requestOptions: error.requestOptions,
                   response: error.response,
+                  type: DioExceptionType.badResponse,
                   error: ApiException(
                     code: errorData['code'] ?? 'SERVER_ERROR',
                     message: errorData['message'] ?? 'Terjadi kesalahan pada server',
-                    statusCode: response.statusCode,
+                    statusCode: response?.statusCode,
                     details: errorData['details'],
                   ),
                 ),

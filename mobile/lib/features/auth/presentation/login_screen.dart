@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -45,11 +46,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         context.go('/today');
       }
     } catch (err) {
-      final cause = err is DioException ? err.error : null;
+      String message = 'Tidak dapat terhubung ke server. Periksa server di port 4000.';
+      if (err is DioException) {
+        if (err.error is ApiException) {
+          message = (err.error as ApiException).message;
+        } else if (err.response?.statusCode == 401) {
+          message = 'Email atau kata sandi tidak sesuai.';
+        } else if (err.response?.data != null) {
+          dynamic d = err.response!.data;
+          if (d is String && d.trim().startsWith('{')) {
+            try {
+              d = jsonDecode(d);
+            } catch (_) {}
+          }
+          if (d is Map && d['error'] != null) {
+            message = d['error']['message'] ?? message;
+          }
+        }
+      } else if (err is ApiException) {
+        message = err.message;
+      }
       setState(() {
-        _errorMessage = cause is ApiException
-            ? cause.message
-            : 'Tidak dapat terhubung. Periksa internet lalu coba lagi.';
+        _errorMessage = message;
       });
     } finally {
       if (mounted) {
