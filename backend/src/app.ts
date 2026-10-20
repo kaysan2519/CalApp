@@ -22,10 +22,19 @@ export const app = express();
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
+
+// Chrome Private Network Access (PNA) preflight support
+app.use((req, res, next) => {
+  if (req.headers['access-control-request-private-network']) {
+    res.setHeader('Access-Control-Allow-Private-Network', 'true');
+  }
+  next();
+});
+
 app.use(cors({
-  origin: '*',
+  origin: true, // Echoes the requesting origin instead of wildcard '*', preventing browser CORS rejection with credentials
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Access-Control-Request-Private-Network'],
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));

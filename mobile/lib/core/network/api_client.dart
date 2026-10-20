@@ -37,7 +37,8 @@ class ApiClient {
   static String get defaultBaseUrl {
     if (_configuredBaseUrl.isNotEmpty) return _configuredBaseUrl;
     if (kIsWeb) {
-      return 'http://127.0.0.1:4000/api/v1';
+      final host = Uri.base.host.isNotEmpty ? Uri.base.host : 'localhost';
+      return 'http://$host:4000/api/v1';
     }
     if (defaultTargetPlatform == TargetPlatform.android) {
       return 'http://10.0.2.2:4000/api/v1';
@@ -69,25 +70,27 @@ class ApiClient {
         onError: (DioException error, handler) async {
           final request = error.requestOptions;
 
-          // Auto-fallback for Android emulator vs local host/LAN
+          // Auto-fallback for network connectivity across interfaces
           if ((error.type == DioExceptionType.connectionTimeout ||
-                  error.type == DioExceptionType.connectionError) &&
-              request.extra['fallbackRetried'] != true &&
-              request.baseUrl.contains('10.0.2.2')) {
+                  error.type == DioExceptionType.connectionError ||
+                  error.type == DioExceptionType.unknown) &&
+              request.extra['fallbackRetried'] != true) {
             request.extra['fallbackRetried'] = true;
-            try {
-              final fallbackOptions = request.copyWith(
-                baseUrl: request.baseUrl.replaceFirst('10.0.2.2', '127.0.0.1'),
-              );
-              final retried = await dio.fetch<dynamic>(fallbackOptions);
-              return handler.resolve(retried);
-            } catch (_) {
+            final currentBase = request.baseUrl;
+            final candidates = <String>[
+              if (kIsWeb) 'http://localhost:4000/api/v1',
+              if (kIsWeb) 'http://127.0.0.1:4000/api/v1',
+              'http://10.0.2.2:4000/api/v1',
+              'http://127.0.0.1:4000/api/v1',
+              'http://localhost:4000/api/v1',
+              'http://10.2.15.183:4000/api/v1',
+            ].where((url) => url != currentBase).toSet().toList();
+
+            for (final candidate in candidates) {
               try {
-                final lanOptions = request.copyWith(
-                  baseUrl: request.baseUrl.replaceFirst('10.0.2.2', '10.2.15.183'),
-                );
-                final lanRetried = await dio.fetch<dynamic>(lanOptions);
-                return handler.resolve(lanRetried);
+                final fallbackOptions = request.copyWith(baseUrl: candidate);
+                final retried = await dio.fetch<dynamic>(fallbackOptions);
+                return handler.resolve(retried);
               } catch (_) {}
             }
           }

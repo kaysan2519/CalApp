@@ -95,8 +95,12 @@ export class NutritionService {
   }
 
   static async fetchOpenFoodFacts(barcode: string) {
+    if (process.env.NODE_ENV === 'test') {
+      return null;
+    }
     const url = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json`;
     const response = await fetch(url, {
+      signal: AbortSignal.timeout(2500),
       headers: {
         'User-Agent': 'CalApp - Android/iOS - Version 1.0 (https://github.com/kaysan2519/CalApp; contact@example.com)',
       },
